@@ -1,5 +1,10 @@
 # shared-libs-python
 
+[![CI](https://github.com/hseshadr/shared-libs-python/actions/workflows/ci.yml/badge.svg)](https://github.com/hseshadr/shared-libs-python/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/hseshadr/shared-libs-python/branch/main/graph/badge.svg)](https://codecov.io/gh/hseshadr/shared-libs-python)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Shared library for HNSW vector indexing, partitioning, and generic partition key management.
 
 ## Features

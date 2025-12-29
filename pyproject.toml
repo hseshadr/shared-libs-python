@@ -38,6 +38,12 @@ dev = [
     "ruff>=0.1.6",
 ]
 
+[project.urls]
+Homepage = "https://github.com/hseshadr/shared-libs-python"
+Documentation = "https://github.com/hseshadr/shared-libs-python#readme"
+Repository = "https://github.com/hseshadr/shared-libs-python"
+Issues = "https://github.com/hseshadr/shared-libs-python/issues"
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["shared_libs_python*"]
