@@ -9,7 +9,8 @@ from shared_libs_python.core.types import VectorEmbedding
 # Mock index factory for demonstration
 async def create_mock_index(name: str, config: IndexConfig | None = None) -> None:
     """Mock index factory - replace with your actual VectorIndex implementation."""
-    print(f"Creating index: {name} with config: {config}")
+    _ = config  # Unused in mock implementation
+    print(f"Creating index: {name}")
     # In real usage, return your VectorIndex implementation
     # return YourVectorIndex(name, config)
 

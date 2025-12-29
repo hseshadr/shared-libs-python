@@ -8,6 +8,7 @@ from shared_libs_python.core.types import VectorEmbedding
 
 async def create_mock_index(name: str, config: IndexConfig | None = None) -> None:
     """Mock index factory."""
+    _ = config  # Unused in mock implementation
     print(f"Creating index: {name}")
 
 
