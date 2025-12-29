@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from shared_libs_python.core.types import IndexConfig, VectorEmbedding
-from shared_libs_python.partitioning.strategies import (
+from shared_libs_python.vector_mgmt.core.types import IndexConfig, VectorEmbedding
+from shared_libs_python.vector_mgmt.partitioning.strategies import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
     PartitionStrategy,

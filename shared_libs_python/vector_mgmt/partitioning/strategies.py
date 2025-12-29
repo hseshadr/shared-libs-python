@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Awaitable
 from typing import Any, Callable
 
-from shared_libs_python.core.types import IndexConfig, VectorEmbedding, VectorIndex
+from shared_libs_python.vector_mgmt.core.types import IndexConfig, VectorEmbedding, VectorIndex
 
 
 class PartitionStrategy(ABC):

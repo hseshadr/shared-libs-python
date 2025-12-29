@@ -1,2 +1,0 @@
-"""Core vector indexing abstractions."""
-

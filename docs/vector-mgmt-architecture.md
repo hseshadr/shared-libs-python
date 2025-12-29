@@ -1,4 +1,4 @@
-# HNSW Indexing & Partitioning Strategy
+# Vector Management Architecture
 
 ## Overview
 
@@ -7,6 +7,15 @@ This document specifies the HNSW vector indexing and partitioning strategy for m
 This is a general-purpose strategy that can be applied to any vector search system requiring multi-tenant isolation.
 
 **Core Principle**: Do NOT create "one HNSW per tenant/user." Instead, use global or bucketed indices with metadata filtering and routing.
+
+## Architecture Diagrams
+
+| Diagram | Description |
+|---------|-------------|
+| ![Partitioning Strategies](diagrams/partitioning-strategies.png) | Comparison of Global, Bucketed, and Two-Tier strategies |
+| ![Query Flow](diagrams/query-flow.png) | End-to-end query lifecycle |
+| ![Reindex Pattern](diagrams/reindex-atomic-swap.png) | Background reindex with atomic swap |
+| ![Scale Decision Tree](diagrams/scale-decision-tree.png) | Choosing the right strategy based on scale |
 
 ---
 
@@ -596,10 +605,10 @@ WHERE tenant_id = $1;  -- Then filter (inefficient)
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-01-15  
+**Document Version**: 1.1
+**Last Updated**: 2025-12-29
 **Status**: Specification for shared-libs-python library
 
-**Library**: `~/dev/shared-libs-python`  
-**Package**: `shared_libs_python`
+**Library**: `~/dev/shared-libs-python`
+**Package**: `shared_libs_python.vector_mgmt`
 

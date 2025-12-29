@@ -2,7 +2,7 @@
 
 import pytest
 
-from shared_libs_python.core.types import IndexConfig, IndexStats, VectorEmbedding
+from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
 
 
 class TestVectorEmbedding:

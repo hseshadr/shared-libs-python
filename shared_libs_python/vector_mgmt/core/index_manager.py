@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from shared_libs_python.core.types import IndexConfig, IndexStats, VectorEmbedding
-from shared_libs_python.partitioning.strategies import PartitionStrategy
+from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
+from shared_libs_python.vector_mgmt.partitioning.strategies import PartitionStrategy
 
 
 class IndexManager:

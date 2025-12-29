@@ -4,9 +4,9 @@ from datetime import datetime
 
 import pytest
 
-from shared_libs_python.core.index_manager import IndexManager
-from shared_libs_python.core.types import IndexConfig, IndexStats, VectorEmbedding
-from shared_libs_python.partitioning.strategies import (
+from shared_libs_python.vector_mgmt.core.index_manager import IndexManager
+from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
+from shared_libs_python.vector_mgmt.partitioning.strategies import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
     TwoTierPartitionStrategy,

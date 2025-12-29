@@ -36,7 +36,7 @@ uv pip install -e ~/dev/shared-libs-python
 
 ```python
 from shared_libs_python import IndexManager, GlobalPartitionStrategy, IndexConfig
-from shared_libs_python.core.types import VectorEmbedding
+from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
 
 # Create index factory (implement VectorIndex protocol)
 async def create_index(name: str, config: IndexConfig):

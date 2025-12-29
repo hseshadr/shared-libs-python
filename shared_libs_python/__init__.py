@@ -1,15 +1,26 @@
-"""Vector management library for HNSW indexing, partitioning, and generic partition key management."""
+"""Shared libraries for Python projects.
+
+This package contains reusable libraries for various purposes.
+Currently includes vector_mgmt for HNSW vector indexing and partitioning.
+"""
 
 __version__ = "0.1.0"
 
-from shared_libs_python.core.index_manager import IndexManager
-from shared_libs_python.core.types import IndexConfig, IndexStats, VectorEmbedding, VectorIndex
-from shared_libs_python.partitioning.strategies import (
+# Re-export vector_mgmt for backward compatibility and convenience
+from shared_libs_python.vector_mgmt import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
+    IndexConfig,
+    IndexManager,
+    IndexStats,
     PartitionStrategy,
     TwoTierPartitionStrategy,
+    VectorEmbedding,
+    VectorIndex,
 )
+
+# Package exports
+import shared_libs_python.vector_mgmt as vector_mgmt
 
 __all__ = [
     "IndexManager",
@@ -21,5 +32,6 @@ __all__ = [
     "IndexStats",
     "VectorEmbedding",
     "VectorIndex",
+    "vector_mgmt",
 ]
 

@@ -3,7 +3,7 @@
 import asyncio
 
 from shared_libs_python import GlobalPartitionStrategy, IndexConfig, IndexManager
-from shared_libs_python.core.types import VectorEmbedding
+from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
 
 
 async def create_mock_index(name: str, config: IndexConfig | None = None) -> None:

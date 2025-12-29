@@ -2,7 +2,7 @@
 
 ## Documents
 
-### [HNSW_PARTITIONING_STRATEGY.md](./HNSW_PARTITIONING_STRATEGY.md)
+### [vector-mgmt-architecture.md](./vector-mgmt-architecture.md)
 Complete specification for HNSW indexing and partitioning strategies:
 - Generic partitioning patterns (global, bucketed, two-tier, hierarchical)
 - Support for any partition key (tenant_id, user_id, org_id, etc.)

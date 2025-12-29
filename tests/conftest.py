@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from shared_libs_python.core.types import IndexConfig, IndexStats, VectorEmbedding, VectorIndex
+from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding, VectorIndex
 
 
 class MockVectorIndex:
