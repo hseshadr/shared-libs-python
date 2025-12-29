@@ -17,17 +17,32 @@ Shared library for HNSW vector indexing, partitioning, and generic partition key
 
 ## Installation
 
+### From GitHub Releases (recommended for other projects)
+
+```bash
+# Install specific version from GitHub Release
+uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.0/shared_libs_python-0.1.0-py3-none-any.whl
+
+# Or install latest from git
+uv pip install git+https://github.com/hseshadr/shared-libs-python.git
+
+# Or pin to a specific tag
+uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.0
+```
+
+In your `pyproject.toml`:
+```toml
+dependencies = [
+    "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.0",
+]
+```
+
+### Local Development
+
 ```bash
 cd ~/dev/shared-libs-python
 uv sync
 uv pip install -e .
-```
-
-Or install from other projects:
-
-```bash
-# In your project
-uv pip install -e ~/dev/shared-libs-python
 ```
 
 ## Usage
