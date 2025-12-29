@@ -2,6 +2,13 @@
 
 ## Documents
 
+### [installation-guide.md](./installation-guide.md)
+How to install this package in your projects:
+- Installation from GitHub Releases and git tags
+- Adding to pyproject.toml and requirements.txt
+- Private repository authentication (SSH, tokens, CI/CD)
+- Troubleshooting common issues
+
 ### [vector-mgmt-architecture.md](./vector-mgmt-architecture.md)
 Complete specification for HNSW indexing and partitioning strategies:
 - Generic partitioning patterns (global, bucketed, two-tier, hierarchical)
