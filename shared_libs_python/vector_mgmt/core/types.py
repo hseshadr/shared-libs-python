@@ -1,6 +1,6 @@
 """Type definitions for vector management."""
 
-from typing import Any, Callable, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -16,12 +16,12 @@ class VectorEmbedding(BaseModel):
     def get_partition_key(self, key_name: str = "tenant_id") -> str | None:
         """
         Get partition key value from embedding.
-        
+
         First checks metadata[key_name], then falls back to tenant_id for backward compatibility.
-        
+
         Args:
             key_name: Name of the partition key (e.g., 'tenant_id', 'user_id', 'org_id')
-            
+
         Returns:
             Partition key value or None
         """
@@ -76,7 +76,7 @@ class VectorIndex(Protocol):
     ) -> list[tuple[str, float]]:
         """
         Search for nearest neighbors.
-        
+
         Returns: List of (entity_id, distance) tuples
         """
         ...
@@ -92,4 +92,3 @@ class VectorIndex(Protocol):
     async def rebuild(self, config: IndexConfig | None = None) -> None:
         """Rebuild index with optional new configuration."""
         ...
-

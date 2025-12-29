@@ -1,12 +1,16 @@
 """Pytest fixtures and test utilities."""
 
-from collections.abc import Awaitable
-from typing import Any, Callable
-from unittest.mock import AsyncMock, MagicMock
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 
-from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding, VectorIndex
+from shared_libs_python.vector_mgmt.core.types import (
+    IndexConfig,
+    IndexStats,
+    VectorEmbedding,
+    VectorIndex,
+)
 
 
 class MockVectorIndex:
@@ -126,4 +130,3 @@ def sample_embeddings() -> list[VectorEmbedding]:
 def index_config() -> IndexConfig:
     """Sample index configuration."""
     return IndexConfig(m=32, ef_construction=200, ef_search=100, dimension=1536)
-

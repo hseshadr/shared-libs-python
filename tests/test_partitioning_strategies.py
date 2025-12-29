@@ -4,11 +4,10 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from shared_libs_python.vector_mgmt.core.types import IndexConfig, VectorEmbedding
+from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
 from shared_libs_python.vector_mgmt.partitioning.strategies import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
-    PartitionStrategy,
     TwoTierPartitionStrategy,
 )
 
@@ -68,6 +67,7 @@ class TestGlobalPartitionStrategy:
     @pytest.mark.asyncio
     async def test_custom_partition_key_extractor(self, mock_index_factory) -> None:
         """Test global strategy with custom partition key extractor."""
+
         def extractor(emb: VectorEmbedding) -> str | None:
             return emb.metadata.get("custom_key")
 
@@ -299,4 +299,3 @@ class TestTwoTierPartitionStrategy:
         partitions = strategy.get_partitions(embeddings)
         assert partitions["hot"][0].entity_id == "e1"
         assert partitions["cold"][0].entity_id == "e2"
-

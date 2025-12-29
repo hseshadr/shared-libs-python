@@ -1,2 +1,1 @@
 """Reindexing utilities."""
-

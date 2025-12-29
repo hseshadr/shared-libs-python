@@ -17,7 +17,7 @@ class IndexManager:
     ) -> None:
         """
         Initialize index manager.
-        
+
         Args:
             partition_strategy: Strategy for partitioning indices
             default_config: Default index configuration
@@ -34,7 +34,7 @@ class IndexManager:
     ) -> None:
         """
         Insert embeddings using partition strategy.
-        
+
         Args:
             embeddings: List of embeddings to insert
             partition_key: Optional partition key value (used as fallback if not in embedding metadata)
@@ -54,14 +54,14 @@ class IndexManager:
     ) -> list[tuple[str, float]]:
         """
         Search across partitions using partition strategy.
-        
+
         Args:
             query_vector: Query vector for similarity search
             k: Number of results to return
             partition_key: Partition key value to filter by
             filters: Additional filters to apply
             ef_search: HNSW ef_search parameter override
-            
+
         Returns:
             List of (entity_id, distance) tuples
         """
@@ -96,7 +96,7 @@ class IndexManager:
     ) -> None:
         """
         Delete embeddings across partitions.
-        
+
         Args:
             entity_ids: List of entity IDs to delete
             partition_key: Partition key value to scope deletion
@@ -109,10 +109,10 @@ class IndexManager:
     async def get_stats(self, partition_key: str | None = None) -> list[IndexStats]:
         """
         Get statistics for relevant partitions.
-        
+
         Args:
             partition_key: Partition key value to scope statistics
-            
+
         Returns:
             List of index statistics
         """
@@ -133,11 +133,11 @@ class IndexManager:
     ) -> bool:
         """
         Check if rebuild is needed and trigger if so.
-        
+
         Args:
             partition_key: Partition key value to scope rebuild check
             force: Force rebuild regardless of conditions
-            
+
         Returns:
             True if rebuild was triggered, False otherwise
         """
@@ -156,4 +156,3 @@ class IndexManager:
                 return True
 
         return False
-

@@ -1,7 +1,5 @@
 """Tests for core types."""
 
-import pytest
-
 from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
 
 
@@ -173,4 +171,3 @@ class TestIndexStats:
         )
         assert stats.build_time_seconds == 120.5
         assert stats.last_rebuild_at == "2025-01-15T10:00:00Z"
-

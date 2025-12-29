@@ -7,6 +7,8 @@ Currently includes vector_mgmt for HNSW vector indexing and partitioning.
 __version__ = "0.1.0"
 
 # Re-export vector_mgmt for backward compatibility and convenience
+# Package exports
+import shared_libs_python.vector_mgmt as vector_mgmt
 from shared_libs_python.vector_mgmt import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
@@ -18,9 +20,6 @@ from shared_libs_python.vector_mgmt import (
     VectorEmbedding,
     VectorIndex,
 )
-
-# Package exports
-import shared_libs_python.vector_mgmt as vector_mgmt
 
 __all__ = [
     "IndexManager",
@@ -34,4 +33,3 @@ __all__ = [
     "VectorIndex",
     "vector_mgmt",
 ]
-

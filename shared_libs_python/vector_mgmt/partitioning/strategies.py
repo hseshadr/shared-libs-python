@@ -1,8 +1,7 @@
 """Partitioning strategy implementations."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable
-from typing import Any, Callable
+from collections.abc import Awaitable, Callable
 
 from shared_libs_python.vector_mgmt.core.types import IndexConfig, VectorEmbedding, VectorIndex
 
@@ -17,7 +16,7 @@ class PartitionStrategy(ABC):
     ) -> None:
         """
         Initialize partition strategy.
-        
+
         Args:
             partition_key_name: Name of the partition key (e.g., 'tenant_id', 'user_id', 'org_id')
             partition_key_extractor: Optional custom function to extract partition key from embedding.
@@ -39,12 +38,12 @@ class PartitionStrategy(ABC):
     ) -> dict[str, list[VectorEmbedding]]:
         """
         Partition embeddings into index groups.
-        
+
         Args:
             embeddings: List of embeddings to partition
             partition_key: Optional partition key value. If provided, used as fallback
                           when embeddings don't have the key in metadata.
-        
+
         Returns: Dict mapping partition_name -> list of embeddings
         """
         ...
@@ -53,10 +52,10 @@ class PartitionStrategy(ABC):
     def get_search_partitions(self, partition_key: str | None = None) -> list[str]:
         """
         Get partition names to search for a given partition key.
-        
+
         Args:
             partition_key: Partition key value to search for
-        
+
         Returns: List of partition names
         """
         ...
@@ -100,9 +99,7 @@ class GlobalPartitionStrategy(PartitionStrategy):
     async def get_index(self, partition_name: str) -> VectorIndex:
         """Get or create global index."""
         if self._index is None:
-            self._index = await self.index_factory(
-                self.index_name, config=self.config
-            )
+            self._index = await self.index_factory(self.index_name, config=self.config)
         return self._index
 
 
@@ -231,16 +228,11 @@ class TwoTierPartitionStrategy(PartitionStrategy):
         """Get or create index for partition."""
         if partition_name == "hot":
             if self._hot_index is None:
-                self._hot_index = await self.index_factory(
-                    "hot_index", config=self.config
-                )
+                self._hot_index = await self.index_factory("hot_index", config=self.config)
             return self._hot_index
         elif partition_name == "cold":
             if self._cold_index is None:
-                self._cold_index = await self.index_factory(
-                    "cold_index", config=self.config
-                )
+                self._cold_index = await self.index_factory("cold_index", config=self.config)
             return self._cold_index
         else:
             raise ValueError(f"Unknown partition: {partition_name}")
-

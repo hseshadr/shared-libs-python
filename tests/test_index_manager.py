@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 
 from shared_libs_python.vector_mgmt.core.index_manager import IndexManager
-from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
+from shared_libs_python.vector_mgmt.core.types import IndexConfig, VectorEmbedding
 from shared_libs_python.vector_mgmt.partitioning.strategies import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
@@ -300,4 +300,3 @@ class TestIndexManager:
         manager = IndexManager(partition_strategy=strategy)
         await manager.delete([])
         # Should not raise
-
