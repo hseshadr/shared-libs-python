@@ -116,9 +116,7 @@ def _needs_rebuild(stats: IndexStats, *, force: bool) -> bool:
     )
 
 
-def _merge_top_k(
-    raw_results: list[tuple[str, float]], k: int
-) -> list[tuple[str, float]]:
+def _merge_top_k(raw_results: list[tuple[str, float]], k: int) -> list[tuple[str, float]]:
     """Deduplicate by entity_id (keeping smallest distance) and return the top ``k``."""
     best: dict[str, float] = {}
     for entity_id, distance in raw_results:
