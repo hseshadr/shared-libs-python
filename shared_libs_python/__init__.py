@@ -8,7 +8,7 @@ __version__ = "0.1.0"
 
 # Re-export vector_mgmt for backward compatibility and convenience
 # Package exports
-import shared_libs_python.vector_mgmt as vector_mgmt
+from shared_libs_python import vector_mgmt
 from shared_libs_python.vector_mgmt import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
@@ -22,13 +22,13 @@ from shared_libs_python.vector_mgmt import (
 )
 
 __all__ = [
-    "IndexManager",
-    "PartitionStrategy",
-    "GlobalPartitionStrategy",
     "BucketedPartitionStrategy",
-    "TwoTierPartitionStrategy",
+    "GlobalPartitionStrategy",
     "IndexConfig",
+    "IndexManager",
     "IndexStats",
+    "PartitionStrategy",
+    "TwoTierPartitionStrategy",
     "VectorEmbedding",
     "VectorIndex",
     "vector_mgmt",

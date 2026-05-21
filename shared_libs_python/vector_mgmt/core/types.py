@@ -1,8 +1,17 @@
 """Type definitions for vector management."""
 
-from typing import Any, Protocol, runtime_checkable
+from __future__ import annotations
 
-from pydantic import BaseModel
+from collections.abc import Mapping
+from typing import Protocol, runtime_checkable
+
+from pydantic import BaseModel, Field
+
+Scalar = str | int | float | bool | None
+"""Permitted metadata/filter value type. Reject `Dict[str, Any]` typing for records."""
+
+Metadata = Mapping[str, Scalar]
+"""Read-only metadata or filter mapping passed across the public API surface."""
 
 
 class VectorEmbedding(BaseModel):
@@ -10,8 +19,8 @@ class VectorEmbedding(BaseModel):
 
     entity_id: str
     embedding: list[float]
-    tenant_id: str | None = None  # Deprecated: use metadata for partition keys
-    metadata: dict[str, Any] = {}
+    tenant_id: str | None = None  # Deprecated: use metadata for partition keys.
+    metadata: dict[str, Scalar] = Field(default_factory=dict)
 
     def get_partition_key(self, key_name: str = "tenant_id") -> str | None:
         """
@@ -71,14 +80,10 @@ class VectorIndex(Protocol):
         self,
         query_vector: list[float],
         k: int,
-        filters: dict[str, Any] | None = None,
+        filters: Metadata | None = None,
         ef_search: int | None = None,
     ) -> list[tuple[str, float]]:
-        """
-        Search for nearest neighbors.
-
-        Returns: List of (entity_id, distance) tuples
-        """
+        """Search for nearest neighbors. Returns ``(entity_id, distance)`` tuples."""
         ...
 
     async def delete(self, entity_ids: list[str]) -> None:
@@ -91,4 +96,12 @@ class VectorIndex(Protocol):
 
     async def rebuild(self, config: IndexConfig | None = None) -> None:
         """Rebuild index with optional new configuration."""
+        ...
+
+
+class IndexFactory(Protocol):
+    """Async factory that constructs a ``VectorIndex`` for a named partition."""
+
+    async def __call__(self, name: str, config: IndexConfig | None = None) -> VectorIndex:
+        """Construct (or return) the index instance for ``name``."""
         ...

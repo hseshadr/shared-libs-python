@@ -9,11 +9,10 @@ Shared library for HNSW vector indexing, partitioning, and generic partition key
 
 ## Features
 
-- **Generic partitioning strategies**: Global, bucketed, two-tier (hot/cold) - works with any partition key
-- **Flexible partition keys**: Support for tenant_id, user_id, org_id, or any custom partition key
-- **Index management**: Abstract interface for vector indices
-- **Reindexing utilities**: Background rebuild + atomic swap patterns
-- **Type-safe**: Full Pydantic models, type hints, protocol-based design
+- **Generic partitioning strategies**: Global, bucketed, two-tier (hot/cold) — works with any partition key.
+- **Flexible partition keys**: Support for `tenant_id`, `user_id`, `org_id`, or any custom partition key.
+- **Index management**: Protocol-based interface for vector indices (bring your own backend).
+- **Type-safe**: Pydantic v2 models, full type hints, `mypy --strict` clean, Radon Grade A complexity.
 
 ## Installation
 
@@ -21,19 +20,19 @@ Shared library for HNSW vector indexing, partitioning, and generic partition key
 
 ```bash
 # Install specific version from GitHub Release
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.0/shared_libs_python-0.1.0-py3-none-any.whl
+uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.1/shared_libs_python-0.1.0-py3-none-any.whl
 
 # Or install latest from git
 uv pip install git+https://github.com/hseshadr/shared-libs-python.git
 
 # Or pin to a specific tag
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.0
+uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.1
 ```
 
 In your `pyproject.toml`:
 ```toml
 dependencies = [
-    "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.0",
+    "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.1",
 ]
 ```
 
@@ -192,15 +191,16 @@ await manager.search(query_vector, k=10, partition_key="tenant_1")
 ## Development
 
 ```bash
-# Run tests
-uv run pytest
-
-# Type checking
-uv run mypy shared_libs_python
-
-# Linting
-uv run ruff check .
+uv sync
+uv run poe quality      # full gate: lint + typecheck + complexity + test
+uv run poe lint
+uv run poe typecheck    # mypy --strict
+uv run poe complexity   # xenon Grade A (cyclomatic complexity ≤ 5)
+uv run poe test         # pytest + ≥90% branch coverage
+uv run poe fmt          # auto-format
 ```
+
+The whole public surface — not just edited code — must clear `uv run poe quality` before a release tag is cut.
 
 ## License
 

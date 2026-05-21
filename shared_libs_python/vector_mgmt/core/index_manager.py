@@ -1,13 +1,27 @@
-"""Index manager for coordinating vector indices."""
+"""Index manager for coordinating partitioned vector indices."""
 
-from typing import Any
+from __future__ import annotations
 
-from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
+from typing import Final
+
+from shared_libs_python.vector_mgmt.core.types import (
+    IndexConfig,
+    IndexStats,
+    Metadata,
+    Scalar,
+    VectorEmbedding,
+)
 from shared_libs_python.vector_mgmt.partitioning.strategies import PartitionStrategy
+
+TOMBSTONE_REBUILD_THRESHOLD_PCT: Final[float] = 10.0
+"""Tombstone percentage above which a rebuild is triggered."""
+
+INDEX_SIZE_REBUILD_THRESHOLD_MB: Final[float] = 1000.0
+"""Index size (MB) above which a rebuild is triggered."""
 
 
 class IndexManager:
-    """Manages vector indices with partitioning strategy."""
+    """Coordinates vector indices through a partitioning strategy."""
 
     def __init__(
         self,
@@ -15,14 +29,7 @@ class IndexManager:
         default_config: IndexConfig | None = None,
         partition_key_name: str = "tenant_id",
     ) -> None:
-        """
-        Initialize index manager.
-
-        Args:
-            partition_strategy: Strategy for partitioning indices
-            default_config: Default index configuration
-            partition_key_name: Name of the partition key used for filtering (e.g., 'tenant_id', 'user_id')
-        """
+        """Wire the manager to a partition strategy and default index config."""
         self.partition_strategy = partition_strategy
         self.default_config = default_config or IndexConfig()
         self.partition_key_name = partition_key_name
@@ -32,13 +39,7 @@ class IndexManager:
         embeddings: list[VectorEmbedding],
         partition_key: str | None = None,
     ) -> None:
-        """
-        Insert embeddings using partition strategy.
-
-        Args:
-            embeddings: List of embeddings to insert
-            partition_key: Optional partition key value (used as fallback if not in embedding metadata)
-        """
+        """Route ``embeddings`` to partitions and insert into each backing index."""
         partitions = self.partition_strategy.get_partitions(embeddings, partition_key)
         for partition_name, partition_embeddings in partitions.items():
             index = await self.partition_strategy.get_index(partition_name)
@@ -49,81 +50,47 @@ class IndexManager:
         query_vector: list[float],
         k: int,
         partition_key: str | None = None,
-        filters: dict[str, Any] | None = None,
+        filters: Metadata | None = None,
         ef_search: int | None = None,
     ) -> list[tuple[str, float]]:
-        """
-        Search across partitions using partition strategy.
-
-        Args:
-            query_vector: Query vector for similarity search
-            k: Number of results to return
-            partition_key: Partition key value to filter by
-            filters: Additional filters to apply
-            ef_search: HNSW ef_search parameter override
-
-        Returns:
-            List of (entity_id, distance) tuples
-        """
-        search_filters = filters or {}
-        if partition_key:
-            search_filters[self.partition_key_name] = partition_key
-
+        """Search across the selected partitions and return the top ``k`` results."""
+        search_filters = self._compose_filters(filters, partition_key)
         partitions = self.partition_strategy.get_search_partitions(partition_key)
         results: list[tuple[str, float]] = []
-
         for partition_name in partitions:
             index = await self.partition_strategy.get_index(partition_name)
-            partition_results = await index.search(
-                query_vector, k=k, filters=search_filters, ef_search=ef_search
+            results.extend(
+                await index.search(query_vector, k=k, filters=search_filters, ef_search=ef_search)
             )
-            results.extend(partition_results)
+        return _merge_top_k(results, k)
 
-        # Merge and deduplicate by entity_id, keeping best score
-        seen: dict[str, float] = {}
-        for entity_id, distance in results:
-            if entity_id not in seen or distance < seen[entity_id]:
-                seen[entity_id] = distance
-
-        # Sort by distance and return top K
-        sorted_results = sorted(seen.items(), key=lambda x: x[1])
-        return sorted_results[:k]
+    def _compose_filters(
+        self, filters: Metadata | None, partition_key: str | None
+    ) -> dict[str, Scalar]:
+        """Merge caller filters with the partition-key filter when truthy."""
+        merged: dict[str, Scalar] = dict(filters) if filters else {}
+        if partition_key:
+            merged[self.partition_key_name] = partition_key
+        return merged
 
     async def delete(
         self,
         entity_ids: list[str],
         partition_key: str | None = None,
     ) -> None:
-        """
-        Delete embeddings across partitions.
-
-        Args:
-            entity_ids: List of entity IDs to delete
-            partition_key: Partition key value to scope deletion
-        """
+        """Delete ``entity_ids`` from every partition the strategy associates with the key."""
         partitions = self.partition_strategy.get_search_partitions(partition_key)
         for partition_name in partitions:
             index = await self.partition_strategy.get_index(partition_name)
             await index.delete(entity_ids)
 
     async def get_stats(self, partition_key: str | None = None) -> list[IndexStats]:
-        """
-        Get statistics for relevant partitions.
-
-        Args:
-            partition_key: Partition key value to scope statistics
-
-        Returns:
-            List of index statistics
-        """
+        """Return statistics for every partition the strategy associates with the key."""
         partitions = self.partition_strategy.get_search_partitions(partition_key)
         stats: list[IndexStats] = []
-
         for partition_name in partitions:
             index = await self.partition_strategy.get_index(partition_name)
-            stat = await index.get_stats()
-            stats.append(stat)
-
+            stats.append(await index.get_stats())
         return stats
 
     async def rebuild_if_needed(
@@ -131,28 +98,31 @@ class IndexManager:
         partition_key: str | None = None,
         force: bool = False,
     ) -> bool:
-        """
-        Check if rebuild is needed and trigger if so.
-
-        Args:
-            partition_key: Partition key value to scope rebuild check
-            force: Force rebuild regardless of conditions
-
-        Returns:
-            True if rebuild was triggered, False otherwise
-        """
-        stats_list = await self.get_stats(partition_key)
-        for stats in stats_list:
-            needs_rebuild = (
-                force
-                or stats.tombstone_percentage > 10.0
-                or stats.index_size_mb > 1000.0  # Example threshold
-            )
-
-            if needs_rebuild:
-                partition_name = stats.index_name
-                index = await self.partition_strategy.get_index(partition_name)
+        """Trigger a rebuild on the first partition that meets the rebuild criteria."""
+        for stats in await self.get_stats(partition_key):
+            if _needs_rebuild(stats, force=force):
+                index = await self.partition_strategy.get_index(stats.index_name)
                 await index.rebuild()
                 return True
-
         return False
+
+
+def _needs_rebuild(stats: IndexStats, *, force: bool) -> bool:
+    """Decide whether an index should be rebuilt based on tombstone load and size."""
+    return (
+        force
+        or stats.tombstone_percentage > TOMBSTONE_REBUILD_THRESHOLD_PCT
+        or stats.index_size_mb > INDEX_SIZE_REBUILD_THRESHOLD_MB
+    )
+
+
+def _merge_top_k(
+    raw_results: list[tuple[str, float]], k: int
+) -> list[tuple[str, float]]:
+    """Deduplicate by entity_id (keeping smallest distance) and return the top ``k``."""
+    best: dict[str, float] = {}
+    for entity_id, distance in raw_results:
+        if entity_id not in best or distance < best[entity_id]:
+            best[entity_id] = distance
+    sorted_results = sorted(best.items(), key=lambda pair: pair[1])
+    return sorted_results[:k]

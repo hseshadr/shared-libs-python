@@ -8,8 +8,8 @@ from shared_libs_python.vector_mgmt.partitioning.strategies import (
 )
 
 __all__ = [
-    "PartitionStrategy",
-    "GlobalPartitionStrategy",
     "BucketedPartitionStrategy",
+    "GlobalPartitionStrategy",
+    "PartitionStrategy",
     "TwoTierPartitionStrategy",
 ]

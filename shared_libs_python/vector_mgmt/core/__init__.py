@@ -9,8 +9,8 @@ from shared_libs_python.vector_mgmt.core.types import (
 )
 
 __all__ = [
-    "IndexManager",
     "IndexConfig",
+    "IndexManager",
     "IndexStats",
     "VectorEmbedding",
     "VectorIndex",

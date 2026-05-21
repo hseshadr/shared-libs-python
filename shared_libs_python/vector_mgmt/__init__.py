@@ -1,6 +1,6 @@
-"""Vector management package for HNSW indexing, partitioning, and generic partition key management."""
+"""HNSW vector indexing, partitioning, and generic partition-key management."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 from shared_libs_python.vector_mgmt.core.index_manager import IndexManager
 from shared_libs_python.vector_mgmt.core.types import (
@@ -17,13 +17,13 @@ from shared_libs_python.vector_mgmt.partitioning.strategies import (
 )
 
 __all__ = [
-    "IndexManager",
-    "PartitionStrategy",
-    "GlobalPartitionStrategy",
     "BucketedPartitionStrategy",
-    "TwoTierPartitionStrategy",
+    "GlobalPartitionStrategy",
     "IndexConfig",
+    "IndexManager",
     "IndexStats",
+    "PartitionStrategy",
+    "TwoTierPartitionStrategy",
     "VectorEmbedding",
     "VectorIndex",
 ]

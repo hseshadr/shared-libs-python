@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "shared-libs-python"
-version = "0.1.0"
-description = "Shared library for HNSW vector indexing, partitioning, and multi-tenant management"
+version = "0.1.1"
+description = "HNSW vector indexing and generic partition-key management for Python."
 readme = "README.md"
 requires-python = ">=3.13"
 license = {text = "MIT"}
 authors = [
-    {name = "Vector Management Team"}
+    {name = "Harish Seshadri", email = "harish.seshadri@gmail.com"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -23,19 +23,24 @@ classifiers = [
 ]
 
 dependencies = [
-    "sqlalchemy[asyncio]>=2.0.23",
-    "pgvector>=0.2.4",
     "pydantic>=2.5.0",
-    "numpy>=1.26.0",
 ]
 
 [project.optional-dependencies]
+pgvector = [
+    "pgvector>=0.2.4",
+    "sqlalchemy[asyncio]>=2.0.23",
+    "numpy>=1.26.0",
+]
 dev = [
     "pytest>=7.4.3",
     "pytest-asyncio>=0.21.1",
     "pytest-cov>=4.1.0",
     "mypy>=1.7.0",
     "ruff>=0.1.6",
+    "xenon>=0.9.0",
+    "radon>=6.0.0",
+    "poethepoet>=0.30.0",
 ]
 
 [dependency-groups]
@@ -45,6 +50,9 @@ dev = [
     "pytest-cov>=4.1.0",
     "mypy>=1.7.0",
     "ruff>=0.1.6",
+    "xenon>=0.9.0",
+    "radon>=6.0.0",
+    "poethepoet>=0.30.0",
 ]
 
 [project.urls]
@@ -63,8 +71,14 @@ line-length = 100
 exclude = [".git", "__pycache__", "build", "dist", ".venv", "venv"]
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "C4", "UP", "ARG", "SIM"]
-ignore = ["E501", "B008", "C901", "ARG002"]
+select = ["E", "F", "I", "W", "C901", "B", "UP", "SIM", "N", "RUF", "ASYNC", "S", "PL"]
+ignore = ["ARG002", "S101", "PLR0913"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "PLR2004", "C901", "PLR0911", "PLR0912"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 5
 
 [tool.mypy]
 python_version = "3.13"
@@ -106,3 +120,10 @@ exclude_lines = [
 ]
 fail_under = 90.0
 
+[tool.poe.tasks]
+lint = "ruff check shared_libs_python/ tests/"
+fmt = "ruff format shared_libs_python/ tests/"
+typecheck = "mypy --strict shared_libs_python/"
+complexity = "xenon --max-absolute A --max-modules A --max-average A shared_libs_python/"
+test = "pytest"
+quality = ["lint", "typecheck", "complexity", "test"]
