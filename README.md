@@ -5,204 +5,138 @@
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Shared library for HNSW vector indexing, partitioning, and generic partition key management.
+## TL;DR
 
-## Features
+- **What it is.** A tiny Python library for partitioned vector search. You bring
+  a `VectorIndex` implementation (FAISS, pgvector, hnswlib, …); the library
+  gives you an `IndexManager` that routes embeddings into the right partition
+  and merges top-k results back out.
+- **Why it works.** The partitioning strategy is decoupled from the index
+  backend behind two Protocols (`VectorIndex`, `IndexFactory`). Swap the
+  strategy (`Global` / `Bucketed` / `TwoTier`) without touching the index;
+  swap the index without touching the strategy.
+- **Why it exists.** Every multi-tenant vector-search system rediscovers the
+  same partitioning patterns ("global + filter", "hash buckets", "hot/cold").
+  This library does that once, cleanly typed, so downstream projects
+  (`edge-proc`, …) can `import shared_libs_python` instead of reinventing it.
+- **Status.** v0.1.1, alpha. `mypy --strict` clean, Radon Grade A, ≥90% branch
+  coverage. Backwards-compatible with the legacy `tenant_id` API.
 
-- **Generic partitioning strategies**: Global, bucketed, two-tier (hot/cold) — works with any partition key.
-- **Flexible partition keys**: Support for `tenant_id`, `user_id`, `org_id`, or any custom partition key.
-- **Index management**: Protocol-based interface for vector indices (bring your own backend).
-- **Type-safe**: Pydantic v2 models, full type hints, `mypy --strict` clean, Radon Grade A complexity.
+## 60-second quickstart
+
+A teaser against the bundled in-memory reference index — produces real output.
+
+```python
+import asyncio
+from shared_libs_python import GlobalPartitionStrategy, IndexManager
+from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
+from shared_libs_python.vector_mgmt.testing import in_memory_factory
+
+async def demo() -> None:
+    strategy = GlobalPartitionStrategy(index_factory=in_memory_factory)
+    manager = IndexManager(partition_strategy=strategy)
+    await manager.insert(
+        [VectorEmbedding(entity_id="a", embedding=[0.1, 0.2, 0.3, 0.4], tenant_id="t1")],
+        partition_key="t1",
+    )
+    print(await manager.search([0.1, 0.2, 0.3, 0.4], k=5, partition_key="t1"))
+
+asyncio.run(demo())  # → [('a', 0.0)]
+```
+
+Or run all three bundled examples end-to-end:
+
+```bash
+git clone https://github.com/hseshadr/shared-libs-python.git
+cd shared-libs-python
+uv sync
+bash examples/run_loop.sh
+```
+
+`InMemoryVectorIndex` is a reference implementation for tests and examples; in
+production you implement `VectorIndex` against your own backend. See
+[`edge-proc`'s `LocalVecIndex`](https://github.com/hseshadr/edge-proc) for a
+FAISS-backed example.
 
 ## Installation
 
-### From GitHub Releases (recommended for other projects)
-
 ```bash
-# Install specific version from GitHub Release
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.1/shared_libs_python-0.1.0-py3-none-any.whl
-
-# Or install latest from git
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git
-
-# Or pin to a specific tag
+# From a git tag (recommended)
 uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.1
+
+# Or from a GitHub Release wheel
+uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.1/shared_libs_python-0.1.0-py3-none-any.whl
 ```
 
 In your `pyproject.toml`:
 ```toml
 dependencies = [
-    "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.1",
+  "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.1",
 ]
 ```
 
-### Local Development
-
+For local development:
 ```bash
-cd ~/dev/shared-libs-python
+git clone https://github.com/hseshadr/shared-libs-python.git
+cd shared-libs-python
 uv sync
-uv pip install -e .
 ```
 
-## Usage
+## Source tree
 
-### Basic Usage with tenant_id (Backward Compatible)
-
-```python
-from shared_libs_python import IndexManager, GlobalPartitionStrategy, IndexConfig
-from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
-
-# Create index factory (implement VectorIndex protocol)
-async def create_index(name: str, config: IndexConfig):
-    # Return your VectorIndex implementation
-    ...
-
-# Setup partition strategy (defaults to tenant_id)
-strategy = GlobalPartitionStrategy(
-    index_factory=create_index,
-    index_name="global",
-    config=IndexConfig(m=32, ef_construction=200),
-)
-
-# Create manager
-manager = IndexManager(partition_strategy=strategy)
-
-# Insert embeddings
-embeddings = [
-    VectorEmbedding(
-        entity_id="entity_1",
-        embedding=[0.1, 0.2, ...],
-        tenant_id="tenant_1",  # Still supported for backward compatibility
-    )
-]
-await manager.insert(embeddings, partition_key="tenant_1")
-
-# Search
-results = await manager.search(
-    query_vector=[0.1, 0.2, ...],
-    k=10,
-    partition_key="tenant_1",
-)
+```
+shared_libs_python/
+  vector_mgmt/
+    core/
+      types.py          # VectorEmbedding, IndexConfig, IndexStats, VectorIndex, IndexFactory
+      index_manager.py  # IndexManager — routes inserts, merges top-k searches
+    partitioning/
+      strategies.py     # GlobalPartitionStrategy, BucketedPartitionStrategy, TwoTierPartitionStrategy
+    testing.py          # InMemoryVectorIndex — reference impl for tests + examples
+examples/               # basic / custom-key / composite-key, plus run_loop.sh
+tests/                  # pytest suite (≥90% branch coverage)
 ```
 
-### Using Custom Partition Keys
+## Partitioning strategies
 
-```python
-# Example: User-based partitioning
-strategy = BucketedPartitionStrategy(
-    index_factory=create_index,
-    num_buckets=256,
-    partition_key_name="user_id",  # Use user_id instead of tenant_id
-)
+All strategies accept `partition_key_name` (default `"tenant_id"`) and an
+optional `partition_key_extractor` callable.
 
-manager = IndexManager(
-    partition_strategy=strategy,
-    partition_key_name="user_id",
-)
+| Strategy | When to use | How it routes |
+|----------|-------------|---------------|
+| `GlobalPartitionStrategy` | < 50K partition keys | One global index; filter by metadata at query time |
+| `BucketedPartitionStrategy` | 50K – 5M partition keys | Hash the partition key into one of N buckets (default 256) |
+| `TwoTierPartitionStrategy` | Time-keyed workloads | Split by `metadata["created_at"]` into a hot tier and a cold tier |
 
-# Embeddings with user_id in metadata
-embeddings = [
-    VectorEmbedding(
-        entity_id="entity_1",
-        embedding=[0.1, 0.2, ...],
-        metadata={"user_id": "user_123", "category": "documents"},
-    )
-]
-await manager.insert(embeddings, partition_key="user_123")
+The deep dive (rationale, scaling math, recommended `m` / `ef_construction`)
+lives in [`docs/vector-mgmt-architecture.md`](docs/vector-mgmt-architecture.md).
 
-# Search for a specific user
-results = await manager.search(
-    query_vector=[0.1, 0.2, ...],
-    k=10,
-    partition_key="user_123",
-)
-```
+## Generic partition keys
 
-### Using Custom Partition Key Extractor
+The library was originally `tenant_id`-only. v0.1+ supports any partition key:
 
-```python
-# Example: Composite partition key (org_id + region)
-def extract_partition_key(emb: VectorEmbedding) -> str | None:
-    org_id = emb.metadata.get("org_id")
-    region = emb.metadata.get("region", "default")
-    if org_id:
-        return f"{org_id}:{region}"
-    return None
+- store it in `VectorEmbedding.metadata` (e.g. `{"user_id": "u1"}`),
+- pass `partition_key_name="user_id"` to your strategy and manager,
+- optionally pass a `partition_key_extractor` for composite keys (see
+  [`examples/composite_partition_key.py`](examples/composite_partition_key.py)).
 
-strategy = GlobalPartitionStrategy(
-    index_factory=create_index,
-    partition_key_name="org_region",
-    partition_key_extractor=extract_partition_key,
-)
-```
-
-## Partitioning Strategies
-
-All strategies support generic partition keys via the `partition_key_name` parameter.
-
-### GlobalPartitionStrategy
-Single global index with metadata filtering. Best for < 50K partition keys.
-
-**Parameters:**
-- `partition_key_name`: Name of partition key (default: "tenant_id")
-- `partition_key_extractor`: Optional custom function to extract partition key
-
-### BucketedPartitionStrategy
-Hash-based bucketing (e.g., 256 buckets). Best for 50K - 5M partition keys.
-
-**Parameters:**
-- `num_buckets`: Number of buckets (default: 256)
-- `partition_key_name`: Name of partition key (default: "tenant_id")
-- `partition_key_extractor`: Optional custom function to extract partition key
-
-### TwoTierPartitionStrategy
-Hot/cold separation for recent vs historical data based on `created_at` metadata.
-
-**Parameters:**
-- `hot_retention_days`: Days to keep in hot tier (default: 30)
-- `partition_key_name`: Name of partition key (default: "tenant_id")
-- `partition_key_extractor`: Optional custom function to extract partition key
-
-## Migration from tenant_id to Generic Partition Keys
-
-The library now supports generic partition keys while maintaining backward compatibility:
-
-**Backward Compatible:**
-- `VectorEmbedding.tenant_id` field still works
-- Default `partition_key_name="tenant_id"` maintains existing behavior
-- Old code using `tenant_id` parameter will continue to work
-
-**New Generic API:**
-- Use `partition_key` parameter instead of `tenant_id` in `IndexManager` methods
-- Configure `partition_key_name` in strategies for custom keys
-- Store partition keys in `metadata` dict for flexibility
-
-**Example Migration:**
-```python
-# Old API (still works)
-await manager.insert(embeddings, tenant_id="tenant_1")
-await manager.search(query_vector, k=10, tenant_id="tenant_1")
-
-# New Generic API (recommended)
-await manager.insert(embeddings, partition_key="tenant_1")
-await manager.search(query_vector, k=10, partition_key="tenant_1")
-```
+The legacy `tenant_id` field on `VectorEmbedding` still works.
 
 ## Development
 
 ```bash
 uv sync
-uv run poe quality      # full gate: lint + typecheck + complexity + test
+uv run poe quality      # lint + typecheck + complexity + tests with ≥90% coverage
 uv run poe lint
 uv run poe typecheck    # mypy --strict
-uv run poe complexity   # xenon Grade A (cyclomatic complexity ≤ 5)
-uv run poe test         # pytest + ≥90% branch coverage
-uv run poe fmt          # auto-format
+uv run poe complexity   # xenon Grade A (cyclomatic ≤ 5)
+uv run poe test
+uv run poe fmt
 ```
 
-The whole public surface — not just edited code — must clear `uv run poe quality` before a release tag is cut.
+The whole public surface — not just edited code — must clear `uv run poe
+quality` before a release tag is cut.
 
 ## License
 
-MIT
-
+MIT.

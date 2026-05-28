@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `shared_libs_python.vector_mgmt.testing` — `InMemoryVectorIndex` reference
+  implementation and `in_memory_factory`, so the bundled `examples/` run
+  end-to-end against a fresh checkout.
+- `examples/run_loop.sh` — single-command end-to-end demo walking all three
+  examples.
+
+### Changed
+- Root `README.md` rewritten for cold-reader clarity: 4-part TL;DR, ≤15-line
+  teaser quickstart, source-tree diagram aligned to the actual layout.
+- `examples/basic_usage.py`, `custom_partition_key.py`,
+  `composite_partition_key.py` now use the bundled in-memory factory and
+  produce real output (previously crashed with `NoneType has no attribute
+  'insert'`).
+- `CLAUDE.md`: dropped stale "Placeholder Modules" section
+  (`vector_mgmt/indexing/`, `vector_mgmt/reindex/` were removed in v0.1.1);
+  documented the `testing` module; fixed `metadata: dict[str, Any]` to
+  `dict[str, Scalar]`.
+
+### Removed
+- Stale root-level review documents (`PROJECT_REVIEW.md`, `GITHUB_REVIEW.md`,
+  `REVIEW_SUMMARY.md`) from the pre-v0.1.1 review cycle.
+
 ## [0.1.1] - 2026-05-21
 
 ### Changed

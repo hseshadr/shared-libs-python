@@ -1,82 +1,77 @@
-"""Example using composite partition keys (org_id + region)."""
+"""Composite-key demo: route by ``org_id:region`` via a custom extractor.
+
+Sometimes a single metadata field isn't enough — you want per-org *and*
+per-region isolation. Plug a ``partition_key_extractor`` callable into the
+strategy; the rest of the API stays identical.
+"""
+
+from __future__ import annotations
 
 import asyncio
 
-from shared_libs_python import GlobalPartitionStrategy, IndexConfig, IndexManager
+from shared_libs_python import GlobalPartitionStrategy, IndexManager
 from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
-
-
-async def create_mock_index(name: str, config: IndexConfig | None = None) -> None:
-    """Mock index factory."""
-    _ = config  # Unused in mock implementation
-    print(f"Creating index: {name}")
+from shared_libs_python.vector_mgmt.testing import in_memory_factory
 
 
 def extract_org_region(emb: VectorEmbedding) -> str | None:
-    """Custom extractor for composite partition key: org_id:region."""
+    """Build the composite key ``org_id:region`` from metadata."""
     org_id = emb.metadata.get("org_id")
     region = emb.metadata.get("region", "default")
-    if org_id:
+    if isinstance(org_id, str):
         return f"{org_id}:{region}"
     return None
 
 
+def _embed(
+    entity_id: str,
+    vector: list[float],
+    org_id: str,
+    region: str,
+    category: str | None,
+) -> VectorEmbedding:
+    """Build a ``VectorEmbedding`` and pre-compute the composite key in metadata."""
+    metadata: dict[str, str] = {
+        "org_id": org_id,
+        "region": region,
+        "org_region": f"{org_id}:{region}",
+    }
+    if category is not None:
+        metadata["category"] = category
+    return VectorEmbedding(entity_id=entity_id, embedding=vector, metadata=metadata)
+
+
 async def main() -> None:
-    """Example with composite partition key."""
-    # Setup strategy with custom partition key extractor
+    """Insert embeddings across two orgs and search a single org+region slice."""
     strategy = GlobalPartitionStrategy(
-        index_factory=create_mock_index,
+        index_factory=in_memory_factory,
         partition_key_name="org_region",
         partition_key_extractor=extract_org_region,
     )
-
     manager = IndexManager(
         partition_strategy=strategy,
         partition_key_name="org_region",
     )
 
-    # Embeddings with org_id and region
+    # The extractor partitions; the search filter still reads metadata by name,
+    # so the composite key has to live in metadata too.
     embeddings = [
-        VectorEmbedding(
-            entity_id="entity_1",
-            embedding=[0.1] * 1536,
-            metadata={
-                "org_id": "org_123",
-                "region": "us-east",
-                "category": "documents",
-            },
-        ),
-        VectorEmbedding(
-            entity_id="entity_2",
-            embedding=[0.2] * 1536,
-            metadata={
-                "org_id": "org_123",
-                "region": "us-west",
-                "category": "images",
-            },
-        ),
-        VectorEmbedding(
-            entity_id="entity_3",
-            embedding=[0.3] * 1536,
-            metadata={
-                "org_id": "org_456",
-                "region": "eu-west",
-            },
-        ),
+        _embed("entity_1", [0.1, 0.2, 0.3, 0.4], "org_123", "us-east", "documents"),
+        _embed("entity_2", [0.5, 0.5, 0.5, 0.5], "org_123", "us-west", "images"),
+        _embed("entity_3", [0.9, 0.8, 0.7, 0.6], "org_456", "eu-west", None),
     ]
 
-    # Insert - composite keys extracted automatically
     await manager.insert(embeddings)
-    print("✓ Inserted embeddings with composite partition keys")
+    print(f"inserted {len(embeddings)} embeddings across org:region partitions")
 
-    # Search for specific org:region
-    query_vector = [0.15] * 1536
     results = await manager.search(
-        query_vector=query_vector,
+        query_vector=[0.15, 0.25, 0.35, 0.45],
         k=10,
-        partition_key="org_123:us-east",  # Search only this org:region
+        partition_key="org_123:us-east",
     )
-    print(f"✓ Found {len(results)} results for org_123:us-east")
+    print(f"top-{len(results)} matches for org_123:us-east:")
+    for entity_id, distance in results:
+        print(f"  {entity_id}  distance={distance:.4f}")
 
 
 if __name__ == "__main__":

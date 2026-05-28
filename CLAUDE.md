@@ -47,7 +47,8 @@ from shared_libs_python import (
 ### Core Types (`vector_mgmt/core/types.py`)
 
 **VectorEmbedding**: Pydantic model for vectors.
-- `entity_id`, `embedding: list[float]`, `metadata: dict[str, Any]`
+- `entity_id`, `embedding: list[float]`, `metadata: dict[str, Scalar]`
+  (`Scalar = str | int | float | bool | None` — no `Any`).
 - `tenant_id`: Deprecated—use `metadata["tenant_id"]` instead
 - `get_partition_key(key_name)`: Resolves from metadata, falls back to `tenant_id`
 
@@ -89,23 +90,32 @@ async def factory(name: str, config: IndexConfig) -> VectorIndex:
 strategy = GlobalPartitionStrategy(index_factory=factory, ...)
 ```
 
-### Placeholder Modules
+### Reference In-Memory Index (`vector_mgmt/testing.py`)
 
-`vector_mgmt/indexing/` and `vector_mgmt/reindex/` are stubs for future index implementations and atomic-swap reindexing.
+`InMemoryVectorIndex` is a conformant, *non-production* `VectorIndex` implementation.
+Use it in tests and in the bundled `examples/`. Production code should implement
+the protocol against a real backend (see `edge-proc`'s `LocalVecIndex` for a
+FAISS-backed reference).
+
+`in_memory_factory(name, config)` is the matching `IndexFactory` callable.
 
 ## Testing
 
-Tests use `MockVectorIndex` from `tests/conftest.py`—an in-memory `VectorIndex` implementation.
+Tests use `InMemoryVectorIndex` from `shared_libs_python.vector_mgmt.testing` —
+the same reference implementation the examples consume.
 
-Key fixtures: `mock_index_factory`, `sample_embeddings`, `index_config`.
+The legacy `MockVectorIndex` in `tests/conftest.py` is retained only for the
+existing strategy tests that depend on its quirks.
 
 ## Examples
 
-See `examples/` for usage patterns: `basic_usage.py`, `custom_partition_key.py`, `composite_partition_key.py`.
+See `examples/` for runnable usage patterns. `bash examples/run_loop.sh` walks
+all three examples end-to-end against the bundled in-memory factory.
 
 ## Dependencies
 
-Core: `pydantic>=2.5`, `numpy>=1.26`, `sqlalchemy[asyncio]>=2.0`, `pgvector>=0.2.4`
+Core: `pydantic>=2.5`. The `pgvector`, `sqlalchemy[asyncio]`, and `numpy`
+extras are opt-in via the `pgvector` optional-dependency group.
 
 ## Code Style
 
