@@ -19,8 +19,26 @@
   same partitioning patterns ("global + filter", "hash buckets", "hot/cold").
   This library does that once, cleanly typed, so downstream projects
   (`edge-proc`, …) can `import shared_libs_python` instead of reinventing it.
-- **Status.** v0.1.1, alpha. `mypy --strict` clean, Radon Grade A, ≥90% branch
+- **Status.** v0.1.2, alpha. `mypy --strict` clean, Radon Grade A, ≥90% branch
   coverage. Backwards-compatible with the legacy `tenant_id` API.
+
+## Where it sits in the stack
+
+This is the bottom, most generic layer of a three-repo MIT-licensed stack — the
+partitioning protocol, nothing more:
+
+```
+edge-reco        the reference product: hybrid search + recommendations, in the browser
+  └─ edge-proc   the reusable local-compute substrate (FAISS-backed localvec runtime)
+       └─ shared-libs-python   ← you are here: the vector-partitioning protocol
+```
+
+[`edge-proc`](https://github.com/hseshadr/edge-proc) implements this library's
+`VectorIndex` protocol over FAISS, and [`edge-reco`](https://github.com/hseshadr/edge-reco)
+([live demo](https://edge-reco.com)) is built on `edge-proc`. A clean partitioning
+protocol is what lets the vector index ship as a content-addressed, CDN-distributable,
+locally-runnable artifact — the foundation of zero-per-query-cost, offline-capable
+search. This repo is the foundation, not the headline: small and focused by design.
 
 ## 60-second quickstart
 
@@ -41,7 +59,7 @@ async def demo() -> None:
     )
     print(await manager.search([0.1, 0.2, 0.3, 0.4], k=5, partition_key="t1"))
 
-asyncio.run(demo())  # → [('a', 0.0)]
+asyncio.run(demo())  # → [('a', ~0.0)]  exact match, cosine distance ≈ 0
 ```
 
 Or run all three bundled examples end-to-end:
@@ -62,16 +80,16 @@ FAISS-backed example.
 
 ```bash
 # From a git tag (recommended)
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.1
+uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
 
 # Or from a GitHub Release wheel
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.1/shared_libs_python-0.1.0-py3-none-any.whl
+uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.2/shared_libs_python-0.1.2-py3-none-any.whl
 ```
 
 In your `pyproject.toml`:
 ```toml
 dependencies = [
-  "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.1",
+  "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2",
 ]
 ```
 

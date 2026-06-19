@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-06-19
+
+Public open-source release (MIT). Part of the `edge-reco → edge-proc →
+shared-libs-python` stack going public together; live demo at https://edge-reco.com.
+
 ### Added
 - `shared_libs_python.vector_mgmt.testing` — `InMemoryVectorIndex` reference
   implementation and `in_memory_factory`, so the bundled `examples/` run
@@ -15,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   examples.
 
 ### Changed
+- README cross-links the three-repo stack and states its role (the
+  vector-partitioning protocol edge-proc's FAISS runtime builds on).
 - Root `README.md` rewritten for cold-reader clarity: 4-part TL;DR, ≤15-line
   teaser quickstart, source-tree diagram aligned to the actual layout.
 - `examples/basic_usage.py`, `custom_partition_key.py`,
