@@ -9,7 +9,33 @@ permissions:
   contents: write  # Required for creating releases
 
 jobs:
+  # Zero-defect release rule: nothing builds or publishes unless the full
+  # quality gate passes on the tagged commit. Mirrors ci.yml / `poe gate`
+  # exactly: ruff lint -> ruff format --check -> mypy strict -> xenon A ->
+  # pytest (>=90% coverage).
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.3.2
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run the gate
+        run: uv run poe gate
+
   build:
+    needs: gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -46,7 +72,7 @@ jobs:
           path: dist/
 
   release:
-    needs: build
+    needs: [gate, build]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
@@ -64,27 +90,3 @@ jobs:
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Optional: Run tests before publishing
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v8.3.2
-        with:
-          version: "latest"
-
-      - name: Install dependencies
-        run: |
-          uv sync
-          uv pip install -e .
-
-      - name: Run tests
-        run: uv run pytest tests/ -v

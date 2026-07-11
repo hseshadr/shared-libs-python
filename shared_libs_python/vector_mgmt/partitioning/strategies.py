@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from typing import Final, Literal
 
 from shared_libs_python.vector_mgmt.core.types import (
     IndexConfig,
@@ -69,6 +72,7 @@ class GlobalPartitionStrategy(PartitionStrategy):
         self.index_name = index_name
         self.config = config
         self._index: VectorIndex | None = None
+        self._creation_lock = asyncio.Lock()
 
     def get_partitions(
         self,
@@ -83,9 +87,11 @@ class GlobalPartitionStrategy(PartitionStrategy):
         return [self.index_name]
 
     async def get_index(self, partition_name: str) -> VectorIndex:
-        """Lazily create and cache the global index."""
+        """Lazily create and cache the global index (safe under concurrent calls)."""
         if self._index is None:
-            self._index = await self.index_factory(self.index_name, config=self.config)
+            async with self._creation_lock:
+                if self._index is None:
+                    self._index = await self.index_factory(self.index_name, config=self.config)
         return self._index
 
 
@@ -106,12 +112,19 @@ class BucketedPartitionStrategy(PartitionStrategy):
         self.num_buckets = num_buckets
         self.config = config
         self._indices: dict[str, VectorIndex] = {}
+        self._creation_lock = asyncio.Lock()
 
     def _get_bucket_id(self, partition_key: str | None) -> int:
-        """Compute the bucket id for a partition key (``None`` → bucket 0)."""
+        """Compute the bucket id for a partition key (``None`` → bucket 0).
+
+        Uses a SHA-256 digest of the UTF-8 encoded key — NOT the builtin
+        ``hash()``, which is randomized per process (PYTHONHASHSEED) and would
+        make persisted bucket assignments unstable across runs.
+        """
         if partition_key is None:
             return 0
-        return hash(partition_key) % self.num_buckets
+        digest = hashlib.sha256(partition_key.encode("utf-8")).digest()
+        return int.from_bytes(digest[:8], "big") % self.num_buckets
 
     def _get_partition_name(self, bucket_id: int) -> str:
         """Return the partition name corresponding to ``bucket_id``."""
@@ -135,12 +148,18 @@ class BucketedPartitionStrategy(PartitionStrategy):
         return [self._get_partition_name(self._get_bucket_id(partition_key))]
 
     async def get_index(self, partition_name: str) -> VectorIndex:
-        """Lazily create and cache the index for ``partition_name``."""
+        """Lazily create and cache the index for ``partition_name`` (concurrency-safe)."""
         if partition_name not in self._indices:
-            self._indices[partition_name] = await self.index_factory(
-                partition_name, config=self.config
-            )
+            async with self._creation_lock:
+                if partition_name not in self._indices:
+                    self._indices[partition_name] = await self.index_factory(
+                        partition_name, config=self.config
+                    )
         return self._indices[partition_name]
+
+
+_TIER_FACTORY_NAMES: Final[dict[str, str]] = {"hot": "hot_index", "cold": "cold_index"}
+"""Maps two-tier partition names to the index names handed to the factory."""
 
 
 class TwoTierPartitionStrategy(PartitionStrategy):
@@ -159,53 +178,69 @@ class TwoTierPartitionStrategy(PartitionStrategy):
         self.index_factory = index_factory
         self.hot_retention_days = hot_retention_days
         self.config = config
-        self._hot_index: VectorIndex | None = None
-        self._cold_index: VectorIndex | None = None
+        self._indices: dict[str, VectorIndex] = {}
+        self._creation_lock = asyncio.Lock()
 
     def get_partitions(
         self,
         embeddings: list[VectorEmbedding],
         partition_key: str | None = None,
     ) -> dict[str, list[VectorEmbedding]]:
-        """Classify each embedding as hot or cold based on its ``created_at``."""
-        cutoff_date = datetime.now() - timedelta(days=self.hot_retention_days)
+        """Classify each embedding as hot or cold based on its ``created_at``.
+
+        Timestamps are compared in UTC: the cutoff is timezone-aware, and both
+        aware and naive ``created_at`` values are accepted (naive values are
+        interpreted as UTC).
+        """
+        cutoff_date = datetime.now(UTC) - timedelta(days=self.hot_retention_days)
         tiered: dict[str, list[VectorEmbedding]] = {}
         for emb in embeddings:
             tiered.setdefault(_classify_embedding(emb, cutoff_date), []).append(emb)
         return tiered
 
     def get_search_partitions(self, partition_key: str | None = None) -> list[str]:
-        """Search both hot and cold partitions."""
-        return ["hot", "cold"]
+        """Search every tier.
+
+        Derived from ``_TIER_FACTORY_NAMES`` — the same table ``get_index``
+        routes with — so the set searched can never drift from the set
+        ``get_index`` knows how to build (the drift behind defect (c)).
+        """
+        return list(_TIER_FACTORY_NAMES)
 
     async def get_index(self, partition_name: str) -> VectorIndex:
-        """Lazily create and cache the hot or cold index."""
-        if partition_name == "hot":
-            return await self._get_or_create_hot()
-        if partition_name == "cold":
-            return await self._get_or_create_cold()
-        raise ValueError(f"Unknown partition: {partition_name}")
-
-    async def _get_or_create_hot(self) -> VectorIndex:
-        """Return (creating on first call) the hot index."""
-        if self._hot_index is None:
-            self._hot_index = await self.index_factory("hot_index", config=self.config)
-        return self._hot_index
-
-    async def _get_or_create_cold(self) -> VectorIndex:
-        """Return (creating on first call) the cold index."""
-        if self._cold_index is None:
-            self._cold_index = await self.index_factory("cold_index", config=self.config)
-        return self._cold_index
+        """Lazily create and cache the hot or cold index (concurrency-safe)."""
+        factory_name = _TIER_FACTORY_NAMES.get(partition_name)
+        if factory_name is None:
+            raise ValueError(f"Unknown partition: {partition_name}")
+        if partition_name not in self._indices:
+            async with self._creation_lock:
+                if partition_name not in self._indices:
+                    self._indices[partition_name] = await self.index_factory(
+                        factory_name, config=self.config
+                    )
+        return self._indices[partition_name]
 
 
-def _classify_embedding(emb: VectorEmbedding, cutoff_date: datetime) -> str:
-    """Return ``"hot"`` or ``"cold"`` for ``emb`` based on ``metadata['created_at']``."""
+def _classify_embedding(emb: VectorEmbedding, cutoff_date: datetime) -> Literal["hot", "cold"]:
+    """Return ``"hot"`` or ``"cold"`` for ``emb`` based on ``metadata['created_at']``.
+
+    The contract is lenient by design: missing timestamps classify as hot,
+    malformed ones as cold, and both naive and aware ISO-8601 strings are
+    accepted — naive values are interpreted as UTC. ``cutoff_date`` must be
+    timezone-aware so the comparison can never raise.
+    """
     created_at = emb.metadata.get("created_at")
     if not isinstance(created_at, str) or not created_at:
         return "hot"
     try:
-        emb_date = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-        return "hot" if emb_date > cutoff_date else "cold"
-    except (ValueError, AttributeError):
+        return "hot" if _parse_as_utc(created_at) > cutoff_date else "cold"
+    except ValueError:
         return "cold"
+
+
+def _parse_as_utc(timestamp: str) -> datetime:
+    """Parse an ISO-8601 string to a UTC-aware datetime (naive → assumed UTC)."""
+    parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)

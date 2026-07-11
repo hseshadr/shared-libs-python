@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Releases now require the full quality gate.** The publish workflow's
+  `test` job ran pytest only and gated nothing — a tag push could publish
+  even with failing checks. It is replaced by a `gate` job that mirrors CI
+  (`uv run poe gate`: ruff lint, format check, mypy strict, xenon A, pytest
+  with ≥90% coverage), and both `build` and `release` `needs:` it. Nothing
+  publishes unless the gate passes on the tagged commit.
+
+### Fixed
+- **Timezone-aware `created_at` timestamps no longer raise `TypeError`.**
+  `TwoTierPartitionStrategy` compared parsed timestamps against a naive
+  cutoff, so any aware timestamp (e.g. a `Z` or `+00:00` suffix — the common
+  case for stored ISO-8601) crashed classification. The contract is now
+  explicit: all comparisons happen in UTC; both aware and naive `created_at`
+  values are accepted, and naive values are interpreted as UTC. The lenient
+  edges are unchanged (missing → hot, malformed → cold).
+- **Two-tier rebuild no longer crashes.** `IndexManager.rebuild_if_needed`
+  routed rebuilds by `stats.index_name` ("hot_index"/"cold_index"), which
+  `TwoTierPartitionStrategy.get_index` rejects — it only accepts the
+  partition names "hot"/"cold" — so any two-tier rebuild raised `ValueError`.
+  Rebuilds now iterate partition names and pair each index with its own
+  stats, which is correct for every strategy regardless of how it names the
+  indexes it hands to the factory.
+- **Concurrent lazy index creation no longer loses writes.** All three
+  partition strategies raced on first access: two concurrent `get_index`
+  calls could each create an index, with the loser's instance (and any writes
+  applied to it) silently replaced. Creation is now guarded by an
+  `asyncio.Lock` with a double-checked fast path — the factory runs exactly
+  once per partition and every concurrent caller receives the same instance.
+- **`BucketedPartitionStrategy` routing is now actually deterministic.** Bucket
+  ids are computed from a SHA-256 digest of the UTF-8 encoded partition key
+  instead of Python's builtin `hash()`, which is randomized per process
+  (PYTHONHASHSEED). **Breaking-behavior note:** bucket assignments change for
+  anyone who persisted them — but prior assignments were already unstable
+  across processes (every restart could re-route every key), so this is
+  strictly a fix. Re-partition persisted data once on upgrade; assignments are
+  now stable across processes, machines, and Python versions.
+
 ## [0.1.3] — 2026-07-11
 
 Standards-alignment release — Wave-0 pilot of the portfolio house standard
@@ -111,7 +149,9 @@ shared-libs-python` stack going public together; live demo at https://edge-reco.
 - Full type hints and mypy strict compliance
 - Protocol-based design for extensibility
 
-[Unreleased]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hseshadr/shared-libs-python/releases/tag/v0.1.0
 

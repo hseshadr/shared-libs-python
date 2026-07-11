@@ -1,15 +1,26 @@
 """Tests for partitioning strategies."""
 
-from datetime import datetime, timedelta
+import asyncio
+import os
+import subprocess
+import sys
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
+from shared_libs_python.vector_mgmt.core.types import (
+    IndexConfig,
+    VectorEmbedding,
+    VectorIndex,
+)
 from shared_libs_python.vector_mgmt.partitioning.strategies import (
+    _TIER_FACTORY_NAMES,
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
+    PartitionStrategy,
     TwoTierPartitionStrategy,
 )
+from tests.conftest import MockVectorIndex
 
 
 class TestGlobalPartitionStrategy:
@@ -174,6 +185,127 @@ class TestBucketedPartitionStrategy:
         assert total == 2
 
 
+class TestBucketRoutingDeterminism:
+    """Persisted bucket routing must be stable across processes.
+
+    Python's builtin ``hash()`` is randomized per process (PYTHONHASHSEED), so
+    any strategy that persists bucket assignments must NOT use it. These tests
+    pin the routing to a process-independent digest.
+    """
+
+    _BUCKET_SCRIPT = (
+        "from shared_libs_python.vector_mgmt.partitioning.strategies import "
+        "BucketedPartitionStrategy\n"
+        "strategy = BucketedPartitionStrategy(index_factory=None, num_buckets=1024)\n"
+        "keys = [f'tenant_{i}' for i in range(32)] + ['\\u00fcn\\u00efcode-tenant']\n"
+        "print([strategy.get_search_partitions(key) for key in keys])\n"
+    )
+
+    def _buckets_with_hash_seed(self, seed: str) -> str:
+        """Run bucket routing in a fresh interpreter with a fixed PYTHONHASHSEED."""
+        result = subprocess.run(  # noqa: S603
+            [sys.executable, "-c", self._BUCKET_SCRIPT],
+            capture_output=True,
+            text=True,
+            check=True,
+            env={**os.environ, "PYTHONHASHSEED": seed},
+        )
+        return result.stdout
+
+    def test_same_key_routes_to_same_bucket_across_processes(self) -> None:
+        """The same keys must route to the same buckets under different hash seeds."""
+        assert self._buckets_with_hash_seed("1") == self._buckets_with_hash_seed("2")
+
+    @pytest.mark.asyncio
+    async def test_bucket_assignment_is_pinned(self, mock_index_factory) -> None:
+        """Golden values: persisted bucket assignments must never drift."""
+        strategy = BucketedPartitionStrategy(index_factory=mock_index_factory, num_buckets=256)
+        assert strategy.get_search_partitions("tenant_123") == ["bucket_48"]
+        assert strategy.get_search_partitions("ünïcode-tenant") == ["bucket_60"]
+
+
+class TestConcurrentIndexCreation:
+    """Concurrent lazy index creation must not lose writes.
+
+    Without a lock, two coroutines can both observe "no index yet", both await
+    the factory, and the loser's index (plus any writes already applied to it)
+    is silently replaced. The factory must run exactly once per partition and
+    every concurrent caller must receive the same instance.
+    """
+
+    @staticmethod
+    def _counting_factory() -> tuple[list[str], object]:
+        """Return a (created_names, factory) pair whose factory yields mid-creation."""
+        created: list[str] = []
+
+        async def factory(index_name: str, config: IndexConfig | None = None) -> VectorIndex:
+            await asyncio.sleep(0)  # yield control mid-creation to expose the race
+            created.append(index_name)
+            return MockVectorIndex(index_name, config)
+
+        return created, factory
+
+    async def _assert_single_creation(
+        self, strategy: PartitionStrategy, partition_name: str, created: list[str]
+    ) -> None:
+        """Hammer get_index concurrently; require one instance and one factory call."""
+        indices = await asyncio.gather(*(strategy.get_index(partition_name) for _ in range(10)))
+        assert all(index is indices[0] for index in indices)
+        assert len(created) == 1
+
+    @pytest.mark.asyncio
+    async def test_global_strategy_creates_exactly_one_index(self) -> None:
+        """Concurrent get_index on the global strategy must create one index."""
+        created, factory = self._counting_factory()
+        strategy = GlobalPartitionStrategy(index_factory=factory)
+        await self._assert_single_creation(strategy, "global_index", created)
+
+    @pytest.mark.asyncio
+    async def test_bucketed_strategy_creates_exactly_one_index_per_bucket(self) -> None:
+        """Concurrent get_index on one bucket must create one index for it."""
+        created, factory = self._counting_factory()
+        strategy = BucketedPartitionStrategy(index_factory=factory, num_buckets=4)
+        await self._assert_single_creation(strategy, "bucket_0", created)
+
+    @pytest.mark.asyncio
+    async def test_two_tier_strategy_creates_exactly_one_index_per_tier(self) -> None:
+        """Concurrent get_index on the hot tier must create one index for it."""
+        created, factory = self._counting_factory()
+        strategy = TwoTierPartitionStrategy(index_factory=factory)
+        await self._assert_single_creation(strategy, "hot", created)
+
+
+class TestSearchPartitionsAreRoutable:
+    """Every partition a strategy says to search must be one it can build an index for.
+
+    This is the invariant defect (c) violated: ``TwoTierPartitionStrategy``
+    searched ``"hot"``/``"cold"`` while a stale ``IndexManager`` routed rebuilds
+    by the factory-facing index name (``"hot_index"``), which ``get_index``
+    rejects. ``get_search_partitions`` is now derived from the same
+    ``_TIER_FACTORY_NAMES`` table ``get_index`` routes with, so the search set
+    and the routing table cannot drift apart.
+    """
+
+    @pytest.mark.asyncio
+    async def test_every_searched_partition_is_routable(self, mock_index_factory) -> None:
+        """No strategy may name a search partition its own get_index would reject."""
+        strategies: list[PartitionStrategy] = [
+            GlobalPartitionStrategy(index_factory=mock_index_factory),
+            BucketedPartitionStrategy(index_factory=mock_index_factory, num_buckets=8),
+            TwoTierPartitionStrategy(index_factory=mock_index_factory),
+        ]
+        for strategy in strategies:
+            for partition_name in strategy.get_search_partitions("tenant_1"):
+                index = await strategy.get_index(partition_name)  # must not raise
+                assert index is not None
+
+    @pytest.mark.asyncio
+    async def test_two_tier_search_set_matches_factory_tiers(self, mock_index_factory) -> None:
+        """The two-tier search set is exactly the keys of the routing table."""
+        strategy = TwoTierPartitionStrategy(index_factory=mock_index_factory)
+        assert set(strategy.get_search_partitions()) == set(_TIER_FACTORY_NAMES)
+
+
 class TestTwoTierPartitionStrategy:
     """Tests for TwoTierPartitionStrategy."""
 
@@ -239,6 +371,50 @@ class TestTwoTierPartitionStrategy:
         partitions = strategy.get_partitions(embeddings)
         assert "cold" in partitions
         assert len(partitions["cold"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_partitions_timezone_aware_timestamps(self, mock_index_factory) -> None:
+        """Timezone-aware ``created_at`` values must classify without raising.
+
+        Regression: the cutoff was naive, so aware timestamps (e.g. a "Z" or
+        "+00:00" suffix) raised TypeError on comparison.
+        """
+        strategy = TwoTierPartitionStrategy(
+            index_factory=mock_index_factory,
+            hot_retention_days=30,
+        )
+        now = datetime.now(UTC)
+        recent_aware = (now - timedelta(days=10)).isoformat().replace("+00:00", "Z")
+        old_aware = (now - timedelta(days=40)).isoformat()
+
+        embeddings = [
+            VectorEmbedding(entity_id="e1", embedding=[0.1], metadata={"created_at": recent_aware}),
+            VectorEmbedding(entity_id="e2", embedding=[0.2], metadata={"created_at": old_aware}),
+        ]
+        partitions = strategy.get_partitions(embeddings)
+        assert partitions["hot"][0].entity_id == "e1"
+        assert partitions["cold"][0].entity_id == "e2"
+
+    @pytest.mark.asyncio
+    async def test_get_partitions_mixed_naive_and_aware_timestamps(
+        self, mock_index_factory
+    ) -> None:
+        """Naive timestamps are interpreted as UTC and mix safely with aware ones."""
+        strategy = TwoTierPartitionStrategy(
+            index_factory=mock_index_factory,
+            hot_retention_days=30,
+        )
+        now = datetime.now(UTC)
+        naive_recent = (now - timedelta(days=10)).replace(tzinfo=None).isoformat()
+        aware_old = (now - timedelta(days=40)).isoformat()
+
+        embeddings = [
+            VectorEmbedding(entity_id="e1", embedding=[0.1], metadata={"created_at": naive_recent}),
+            VectorEmbedding(entity_id="e2", embedding=[0.2], metadata={"created_at": aware_old}),
+        ]
+        partitions = strategy.get_partitions(embeddings)
+        assert partitions["hot"][0].entity_id == "e1"
+        assert partitions["cold"][0].entity_id == "e2"
 
     @pytest.mark.asyncio
     async def test_get_search_partitions_returns_both(self, mock_index_factory) -> None:

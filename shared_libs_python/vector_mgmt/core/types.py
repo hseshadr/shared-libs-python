@@ -44,7 +44,14 @@ class VectorEmbedding(BaseModel):
 
 
 class IndexConfig(BaseModel):
-    """HNSW index configuration."""
+    """Index tuning knobs carried to a downstream backend.
+
+    ``m`` and ``ef_construction`` are HNSW *pass-through* parameters: this
+    library ships the partitioning protocol and an in-memory brute-force
+    reference index, not an HNSW implementation of its own. A backend that
+    implements ``VectorIndex`` (FAISS, pgvector, hnswlib, …) is free to honour
+    or ignore them.
+    """
 
     m: int = 32
     ef_construction: int = 200

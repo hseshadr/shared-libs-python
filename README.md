@@ -19,7 +19,9 @@ search results back out. Swapping partitioning schemes is a one-line change,
 and the index backend never has to know.
 
 It is the bottom, most generic layer of a three-repo MIT-licensed stack — the
-partitioning protocol, nothing more:
+partitioning *protocol* (a *protocol* here is just the set of methods a search
+backend must provide — Python's `typing.Protocol`, nothing to subclass),
+nothing more:
 
 ```
 edge-reco        the reference product: hybrid search + recommendations, in the browser

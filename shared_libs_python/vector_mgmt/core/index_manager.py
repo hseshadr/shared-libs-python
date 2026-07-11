@@ -98,10 +98,14 @@ class IndexManager:
         partition_key: str | None = None,
         force: bool = False,
     ) -> bool:
-        """Trigger a rebuild on the first partition that meets the rebuild criteria."""
-        for stats in await self.get_stats(partition_key):
-            if _needs_rebuild(stats, force=force):
-                index = await self.partition_strategy.get_index(stats.index_name)
+        """Trigger a rebuild on the first partition that meets the rebuild criteria.
+
+        Iterates partition names (not ``stats.index_name``): a strategy may hand
+        the factory a different index name than the partition name it routes by.
+        """
+        for partition_name in self.partition_strategy.get_search_partitions(partition_key):
+            index = await self.partition_strategy.get_index(partition_name)
+            if _needs_rebuild(await index.get_stats(), force=force):
                 await index.rebuild()
                 return True
         return False
