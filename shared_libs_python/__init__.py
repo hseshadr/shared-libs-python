@@ -1,7 +1,8 @@
 """Shared libraries for Python projects.
 
 This package contains reusable libraries for various purposes.
-Currently includes vector_mgmt for HNSW vector indexing and partitioning.
+Currently includes vector_mgmt for vector partitioning and generic
+partition-key management.
 """
 
 from importlib.metadata import PackageNotFoundError, version

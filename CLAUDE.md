@@ -61,7 +61,7 @@ those patterns on top of this library's protocols.)
 
 ## Architecture Overview
 
-This library provides HNSW vector index management with flexible partitioning strategies. Core principle: do NOT create one index per tenant—use global or bucketed indices with metadata filtering.
+This library provides vector partitioning (insert routing + top-k result merging) with flexible partitioning strategies. It ships the partitioning protocol and an in-memory brute-force reference index — **not** an HNSW implementation; the HNSW `m` / `ef_construction` values in `IndexConfig` are pass-through knobs carried to whatever backend implements `VectorIndex`. Core principle: do NOT create one index per tenant—use global or bucketed indices with metadata filtering.
 
 ![Architecture Diagram](docs/diagrams/architecture.svg)
 
@@ -83,7 +83,7 @@ from shared_libs_python import (
 - `tenant_id`: Deprecated—use `metadata["tenant_id"]` instead
 - `get_partition_key(key_name)`: Resolves from metadata, falls back to `tenant_id`
 
-**IndexConfig**: HNSW parameters.
+**IndexConfig**: index tuning knobs. `m` / `ef_construction` are HNSW *pass-through* parameters — carried to a downstream backend, not used to build an HNSW graph in this library.
 - `m=32`: Graph connectivity (higher = better recall, more memory)
 - `ef_construction=200`: Build-time search depth
 - `ef_search=100`: Query-time search depth

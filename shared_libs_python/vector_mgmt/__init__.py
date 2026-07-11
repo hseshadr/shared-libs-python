@@ -1,4 +1,9 @@
-"""HNSW vector indexing, partitioning, and generic partition-key management."""
+"""Vector partitioning and generic partition-key management.
+
+Ships the partitioning protocol and an in-memory brute-force reference index —
+HNSW ``m`` / ``ef_construction`` are pass-through knobs for downstream backends,
+not an HNSW implementation shipped here.
+"""
 
 from importlib.metadata import PackageNotFoundError, version
 
