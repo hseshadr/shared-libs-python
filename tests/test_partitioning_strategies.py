@@ -1,5 +1,8 @@
 """Tests for partitioning strategies."""
 
+import os
+import subprocess
+import sys
 from datetime import datetime, timedelta
 
 import pytest
@@ -172,6 +175,45 @@ class TestBucketedPartitionStrategy:
         partitions = strategy.get_partitions(embeddings)
         total = sum(len(embs) for embs in partitions.values())
         assert total == 2
+
+
+class TestBucketRoutingDeterminism:
+    """Persisted bucket routing must be stable across processes.
+
+    Python's builtin ``hash()`` is randomized per process (PYTHONHASHSEED), so
+    any strategy that persists bucket assignments must NOT use it. These tests
+    pin the routing to a process-independent digest.
+    """
+
+    _BUCKET_SCRIPT = (
+        "from shared_libs_python.vector_mgmt.partitioning.strategies import "
+        "BucketedPartitionStrategy\n"
+        "strategy = BucketedPartitionStrategy(index_factory=None, num_buckets=1024)\n"
+        "keys = [f'tenant_{i}' for i in range(32)] + ['\\u00fcn\\u00efcode-tenant']\n"
+        "print([strategy.get_search_partitions(key) for key in keys])\n"
+    )
+
+    def _buckets_with_hash_seed(self, seed: str) -> str:
+        """Run bucket routing in a fresh interpreter with a fixed PYTHONHASHSEED."""
+        result = subprocess.run(  # noqa: S603
+            [sys.executable, "-c", self._BUCKET_SCRIPT],
+            capture_output=True,
+            text=True,
+            check=True,
+            env={**os.environ, "PYTHONHASHSEED": seed},
+        )
+        return result.stdout
+
+    def test_same_key_routes_to_same_bucket_across_processes(self) -> None:
+        """The same keys must route to the same buckets under different hash seeds."""
+        assert self._buckets_with_hash_seed("1") == self._buckets_with_hash_seed("2")
+
+    @pytest.mark.asyncio
+    async def test_bucket_assignment_is_pinned(self, mock_index_factory) -> None:
+        """Golden values: persisted bucket assignments must never drift."""
+        strategy = BucketedPartitionStrategy(index_factory=mock_index_factory, num_buckets=256)
+        assert strategy.get_search_partitions("tenant_123") == ["bucket_48"]
+        assert strategy.get_search_partitions("ünïcode-tenant") == ["bucket_60"]
 
 
 class TestTwoTierPartitionStrategy:

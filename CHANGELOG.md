@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`BucketedPartitionStrategy` routing is now actually deterministic.** Bucket
+  ids are computed from a SHA-256 digest of the UTF-8 encoded partition key
+  instead of Python's builtin `hash()`, which is randomized per process
+  (PYTHONHASHSEED). **Breaking-behavior note:** bucket assignments change for
+  anyone who persisted them — but prior assignments were already unstable
+  across processes (every restart could re-route every key), so this is
+  strictly a fix. Re-partition persisted data once on upgrade; assignments are
+  now stable across processes, machines, and Python versions.
+
 ## [0.1.3] — 2026-07-11
 
 Standards-alignment release — Wave-0 pilot of the portfolio house standard

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -108,10 +109,16 @@ class BucketedPartitionStrategy(PartitionStrategy):
         self._indices: dict[str, VectorIndex] = {}
 
     def _get_bucket_id(self, partition_key: str | None) -> int:
-        """Compute the bucket id for a partition key (``None`` → bucket 0)."""
+        """Compute the bucket id for a partition key (``None`` → bucket 0).
+
+        Uses a SHA-256 digest of the UTF-8 encoded key — NOT the builtin
+        ``hash()``, which is randomized per process (PYTHONHASHSEED) and would
+        make persisted bucket assignments unstable across runs.
+        """
         if partition_key is None:
             return 0
-        return hash(partition_key) % self.num_buckets
+        digest = hashlib.sha256(partition_key.encode("utf-8")).digest()
+        return int.from_bytes(digest[:8], "big") % self.num_buckets
 
     def _get_partition_name(self, bucket_id: int) -> str:
         """Return the partition name corresponding to ``bucket_id``."""
