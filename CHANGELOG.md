@@ -149,7 +149,9 @@ shared-libs-python` stack going public together; live demo at https://edge-reco.
 - Full type hints and mypy strict compliance
 - Protocol-based design for extensibility
 
-[Unreleased]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hseshadr/shared-libs-python/releases/tag/v0.1.0
 
