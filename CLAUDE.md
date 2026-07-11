@@ -7,7 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # Install dependencies
 uv sync
-uv pip install -e .
+
+# THE canonical gate — run before every commit; mirrors CI exactly
+uv run poe gate
 
 # Run all tests (includes coverage, requires 90%+)
 uv run pytest
@@ -18,15 +20,44 @@ uv run pytest tests/test_types.py
 # Run specific test method
 uv run pytest tests/test_index_manager.py::TestIndexManager::test_insert
 
-# Type checking (strict mode)
-uv run mypy shared_libs_python
+# Individual gate steps
+uv run poe lint         # ruff check
+uv run poe fmt-check    # ruff format --check
+uv run poe typecheck    # mypy --strict
+uv run poe complexity   # xenon A/A/A
+uv run poe test         # pytest
 
-# Linting
-uv run ruff check .
-
-# Auto-fix lint issues
+# Auto-fix
+uv run poe fmt
 uv run ruff check --fix .
 ```
+
+## Quality Gates (Non-Negotiable)
+
+`uv run poe gate` must be green before any commit lands on `main`. It runs, in
+order: ruff lint → `ruff format --check` → `mypy --strict` → xenon A/A/A →
+pytest (≥90% coverage, writes `coverage.xml`).
+
+Scars — the real bug behind each rule:
+
+- **The gate mirrors `ci.yml` exactly, both directions.** Until 2026-07-11 the
+  local task (`poe quality`) omitted `ruff format --check` while CI ran it, and
+  CI omitted the xenon complexity step while the local task ran it — each side
+  could be green while the other failed. Any step added to one MUST land in the
+  other in the same commit.
+- **`poe gate` is the only name; no aliases.** This repo called it `poe
+  quality` while sibling repos said `poe gate`; per-repo trivia is how gate
+  steps get silently skipped.
+- **A red scheduled workflow is a red repo.** The weekly `security-audit.yml`
+  (pip-audit) doesn't block merges, so check it explicitly with `gh run list`.
+  Its very first run caught two real CVEs (pygments, pytest) sitting behind a
+  green CI badge.
+
+## WASM / edge-compute declaration
+
+House standard §8: **not applicable.** This is a pure-Python protocol library —
+it ships no WASM, browser, or edge runtime. (Downstream projects implement
+those patterns on top of this library's protocols.)
 
 ## Architecture Overview
 

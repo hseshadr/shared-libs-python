@@ -2,74 +2,54 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.13"]
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-
-    - name: Install dependencies
-      run: |
-        uv sync
-        uv pip install -e .
-
-    - name: Run type checking
-      run: |
-        uv run mypy shared_libs_python
-
-    - name: Run linting
-      run: |
-        uv run ruff check .
-
-    - name: Run tests with coverage
-      run: |
-        uv run pytest tests/ --cov=shared_libs_python --cov-report=xml --cov-report=term-missing
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
-
-  lint:
+  # Mirrors `uv run poe gate` exactly (house standard §3): the gate IS the CI.
+  # Steps inside the gate: ruff lint -> ruff format --check -> mypy strict ->
+  # xenon A -> pytest (>=90% coverage, writes coverage.xml).
+  gate:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.13"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
+      - name: Install uv
+        # No floating v8 tag exists for setup-uv — full version pin required.
+        uses: astral-sh/setup-uv@v8.3.2
+        with:
+          version: "latest"
 
-    - name: Install dependencies
-      run: |
-        uv sync
+      - name: Install dependencies
+        run: uv sync
 
-    - name: Run ruff format check
-      run: |
-        uv run ruff format --check .
+      - name: Run the gate
+        run: uv run poe gate
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
 
+  # Full-history secret scan (house standard §4). GITLEAKS_LICENSE is not
+  # needed: this is a personal account, not an organization.
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full history — gitleaks scans every commit
+
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
