@@ -38,36 +38,34 @@ git checkout -b fix/your-bug-fix
 - Add tests for new functionality
 - Update documentation as needed
 
-### 3. Run Tests
+### 3. Run the Gate
+
+One command runs everything CI runs — lint, format check, strict type
+checking, complexity, and tests with ≥90% coverage. It must pass before you
+push:
 
 ```bash
-# Run all tests
-uv run pytest
+uv run poe gate
+```
 
-# Run with coverage
-uv run pytest --cov=shared_libs_python --cov-report=term-missing
+Individual steps while iterating:
+
+```bash
+# Run all tests (coverage included via pytest addopts)
+uv run pytest
 
 # Run specific test file
 uv run pytest tests/test_types.py
+
+# Type checking (strict mode)
+uv run poe typecheck
+
+# Linting / auto-format
+uv run poe lint
+uv run poe fmt
 ```
 
-### 4. Type Checking
-
-```bash
-uv run mypy shared_libs_python
-```
-
-### 5. Linting
-
-```bash
-# Check for linting issues
-uv run ruff check .
-
-# Auto-fix issues
-uv run ruff check --fix .
-```
-
-### 6. Commit Changes
+### 4. Commit Changes
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -78,7 +76,7 @@ git commit -m "docs: update README with examples"
 git commit -m "test: add tests for custom extractors"
 ```
 
-### 7. Push and Create Pull Request
+### 5. Push and Create Pull Request
 
 ```bash
 git push origin feature/your-feature-name
@@ -137,20 +135,17 @@ uv run pytest tests/test_index_manager.py::TestIndexManager::test_insert
 ## Pull Request Process
 
 1. **Update CHANGELOG.md** with your changes
-2. **Ensure all tests pass** (`uv run pytest`)
-3. **Ensure type checking passes** (`uv run mypy shared_libs_python`)
-4. **Ensure linting passes** (`uv run ruff check .`)
-5. **Update documentation** if needed
-6. **Request review** from maintainers
+2. **Ensure the gate passes** (`uv run poe gate` — lint, format check,
+   `mypy --strict`, xenon complexity, tests with ≥90% coverage)
+3. **Update documentation** if needed
+4. **Request review** from maintainers
 
 ### PR Checklist
 
 - [ ] Tests added/updated
-- [ ] Type checking passes
-- [ ] Linting passes
+- [ ] The gate passes (`uv run poe gate`)
 - [ ] Documentation updated
 - [ ] CHANGELOG.md updated
-- [ ] Coverage maintained at 90%+
 
 ## Adding New Features
 
