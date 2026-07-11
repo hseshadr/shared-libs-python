@@ -256,15 +256,12 @@ class TestIndexManager:
         assert rebuilt is True
 
     @pytest.mark.asyncio
-    async def test_rebuild_if_needed_two_tier_tombstone_threshold(
-        self, mock_index_factory
-    ) -> None:
+    async def test_rebuild_if_needed_two_tier_tombstone_threshold(self, mock_index_factory) -> None:
         """Tombstone-triggered rebuild must work end-to-end with two-tier."""
         strategy = TwoTierPartitionStrategy(index_factory=mock_index_factory)
         manager = IndexManager(partition_strategy=strategy)
         embeddings = [
-            VectorEmbedding(entity_id=f"e{i}", embedding=[0.1], tenant_id="t1")
-            for i in range(5)
+            VectorEmbedding(entity_id=f"e{i}", embedding=[0.1], tenant_id="t1") for i in range(5)
         ]
         await manager.insert(embeddings, partition_key="t1")
         await manager.delete(["e0"], partition_key="t1")  # 20% tombstones on hot
