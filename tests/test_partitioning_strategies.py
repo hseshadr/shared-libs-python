@@ -14,6 +14,7 @@ from shared_libs_python.vector_mgmt.core.types import (
     VectorIndex,
 )
 from shared_libs_python.vector_mgmt.partitioning.strategies import (
+    _TIER_FACTORY_NAMES,
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
     PartitionStrategy,
@@ -272,6 +273,37 @@ class TestConcurrentIndexCreation:
         created, factory = self._counting_factory()
         strategy = TwoTierPartitionStrategy(index_factory=factory)
         await self._assert_single_creation(strategy, "hot", created)
+
+
+class TestSearchPartitionsAreRoutable:
+    """Every partition a strategy says to search must be one it can build an index for.
+
+    This is the invariant defect (c) violated: ``TwoTierPartitionStrategy``
+    searched ``"hot"``/``"cold"`` while a stale ``IndexManager`` routed rebuilds
+    by the factory-facing index name (``"hot_index"``), which ``get_index``
+    rejects. ``get_search_partitions`` is now derived from the same
+    ``_TIER_FACTORY_NAMES`` table ``get_index`` routes with, so the search set
+    and the routing table cannot drift apart.
+    """
+
+    @pytest.mark.asyncio
+    async def test_every_searched_partition_is_routable(self, mock_index_factory) -> None:
+        """No strategy may name a search partition its own get_index would reject."""
+        strategies: list[PartitionStrategy] = [
+            GlobalPartitionStrategy(index_factory=mock_index_factory),
+            BucketedPartitionStrategy(index_factory=mock_index_factory, num_buckets=8),
+            TwoTierPartitionStrategy(index_factory=mock_index_factory),
+        ]
+        for strategy in strategies:
+            for partition_name in strategy.get_search_partitions("tenant_1"):
+                index = await strategy.get_index(partition_name)  # must not raise
+                assert index is not None
+
+    @pytest.mark.asyncio
+    async def test_two_tier_search_set_matches_factory_tiers(self, mock_index_factory) -> None:
+        """The two-tier search set is exactly the keys of the routing table."""
+        strategy = TwoTierPartitionStrategy(index_factory=mock_index_factory)
+        assert set(strategy.get_search_partitions()) == set(_TIER_FACTORY_NAMES)
 
 
 class TestTwoTierPartitionStrategy:

@@ -7,7 +7,7 @@ import hashlib
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from typing import Final
+from typing import Final, Literal
 
 from shared_libs_python.vector_mgmt.core.types import (
     IndexConfig,
@@ -199,8 +199,13 @@ class TwoTierPartitionStrategy(PartitionStrategy):
         return tiered
 
     def get_search_partitions(self, partition_key: str | None = None) -> list[str]:
-        """Search both hot and cold partitions."""
-        return ["hot", "cold"]
+        """Search every tier.
+
+        Derived from ``_TIER_FACTORY_NAMES`` — the same table ``get_index``
+        routes with — so the set searched can never drift from the set
+        ``get_index`` knows how to build (the drift behind defect (c)).
+        """
+        return list(_TIER_FACTORY_NAMES)
 
     async def get_index(self, partition_name: str) -> VectorIndex:
         """Lazily create and cache the hot or cold index (concurrency-safe)."""
@@ -216,7 +221,7 @@ class TwoTierPartitionStrategy(PartitionStrategy):
         return self._indices[partition_name]
 
 
-def _classify_embedding(emb: VectorEmbedding, cutoff_date: datetime) -> str:
+def _classify_embedding(emb: VectorEmbedding, cutoff_date: datetime) -> Literal["hot", "cold"]:
     """Return ``"hot"`` or ``"cold"`` for ``emb`` based on ``metadata['created_at']``.
 
     The contract is lenient by design: missing timestamps classify as hot,
