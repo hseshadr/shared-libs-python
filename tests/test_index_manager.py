@@ -239,6 +239,41 @@ class TestIndexManager:
         assert rebuilt is True
 
     @pytest.mark.asyncio
+    async def test_rebuild_if_needed_two_tier_force(self, mock_index_factory) -> None:
+        """Forced rebuild must work end-to-end with the two-tier strategy.
+
+        Regression: rebuilds were routed by ``stats.index_name`` ("hot_index"),
+        which the two-tier strategy does not accept as a partition name
+        ("hot") — rebuild_if_needed crashed with ValueError.
+        """
+        strategy = TwoTierPartitionStrategy(index_factory=mock_index_factory)
+        manager = IndexManager(partition_strategy=strategy)
+        embeddings = [
+            VectorEmbedding(entity_id="e1", embedding=[0.1], tenant_id="t1"),
+        ]
+        await manager.insert(embeddings, partition_key="t1")
+        rebuilt = await manager.rebuild_if_needed(partition_key="t1", force=True)
+        assert rebuilt is True
+
+    @pytest.mark.asyncio
+    async def test_rebuild_if_needed_two_tier_tombstone_threshold(
+        self, mock_index_factory
+    ) -> None:
+        """Tombstone-triggered rebuild must work end-to-end with two-tier."""
+        strategy = TwoTierPartitionStrategy(index_factory=mock_index_factory)
+        manager = IndexManager(partition_strategy=strategy)
+        embeddings = [
+            VectorEmbedding(entity_id=f"e{i}", embedding=[0.1], tenant_id="t1")
+            for i in range(5)
+        ]
+        await manager.insert(embeddings, partition_key="t1")
+        await manager.delete(["e0"], partition_key="t1")  # 20% tombstones on hot
+        rebuilt = await manager.rebuild_if_needed(partition_key="t1")
+        assert rebuilt is True
+        hot_stats = await (await strategy.get_index("hot")).get_stats()
+        assert hot_stats.tombstone_count == 0
+
+    @pytest.mark.asyncio
     async def test_custom_partition_key_name(self, mock_index_factory) -> None:
         """Test manager with custom partition key name."""
         strategy = GlobalPartitionStrategy(

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Two-tier rebuild no longer crashes.** `IndexManager.rebuild_if_needed`
+  routed rebuilds by `stats.index_name` ("hot_index"/"cold_index"), which
+  `TwoTierPartitionStrategy.get_index` rejects — it only accepts the
+  partition names "hot"/"cold" — so any two-tier rebuild raised `ValueError`.
+  Rebuilds now iterate partition names and pair each index with its own
+  stats, which is correct for every strategy regardless of how it names the
+  indexes it hands to the factory.
 - **Concurrent lazy index creation no longer loses writes.** All three
   partition strategies raced on first access: two concurrent `get_index`
   calls could each create an index, with the loser's instance (and any writes
