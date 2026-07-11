@@ -1,5 +1,6 @@
 """Tests for partitioning strategies."""
 
+import asyncio
 import os
 import subprocess
 import sys
@@ -7,12 +8,18 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
+from shared_libs_python.vector_mgmt.core.types import (
+    IndexConfig,
+    VectorEmbedding,
+    VectorIndex,
+)
 from shared_libs_python.vector_mgmt.partitioning.strategies import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
+    PartitionStrategy,
     TwoTierPartitionStrategy,
 )
+from tests.conftest import MockVectorIndex
 
 
 class TestGlobalPartitionStrategy:
@@ -214,6 +221,57 @@ class TestBucketRoutingDeterminism:
         strategy = BucketedPartitionStrategy(index_factory=mock_index_factory, num_buckets=256)
         assert strategy.get_search_partitions("tenant_123") == ["bucket_48"]
         assert strategy.get_search_partitions("ünïcode-tenant") == ["bucket_60"]
+
+
+class TestConcurrentIndexCreation:
+    """Concurrent lazy index creation must not lose writes.
+
+    Without a lock, two coroutines can both observe "no index yet", both await
+    the factory, and the loser's index (plus any writes already applied to it)
+    is silently replaced. The factory must run exactly once per partition and
+    every concurrent caller must receive the same instance.
+    """
+
+    @staticmethod
+    def _counting_factory() -> tuple[list[str], object]:
+        """Return a (created_names, factory) pair whose factory yields mid-creation."""
+        created: list[str] = []
+
+        async def factory(index_name: str, config: IndexConfig | None = None) -> VectorIndex:
+            await asyncio.sleep(0)  # yield control mid-creation to expose the race
+            created.append(index_name)
+            return MockVectorIndex(index_name, config)
+
+        return created, factory
+
+    async def _assert_single_creation(
+        self, strategy: PartitionStrategy, partition_name: str, created: list[str]
+    ) -> None:
+        """Hammer get_index concurrently; require one instance and one factory call."""
+        indices = await asyncio.gather(*(strategy.get_index(partition_name) for _ in range(10)))
+        assert all(index is indices[0] for index in indices)
+        assert len(created) == 1
+
+    @pytest.mark.asyncio
+    async def test_global_strategy_creates_exactly_one_index(self) -> None:
+        """Concurrent get_index on the global strategy must create one index."""
+        created, factory = self._counting_factory()
+        strategy = GlobalPartitionStrategy(index_factory=factory)
+        await self._assert_single_creation(strategy, "global_index", created)
+
+    @pytest.mark.asyncio
+    async def test_bucketed_strategy_creates_exactly_one_index_per_bucket(self) -> None:
+        """Concurrent get_index on one bucket must create one index for it."""
+        created, factory = self._counting_factory()
+        strategy = BucketedPartitionStrategy(index_factory=factory, num_buckets=4)
+        await self._assert_single_creation(strategy, "bucket_0", created)
+
+    @pytest.mark.asyncio
+    async def test_two_tier_strategy_creates_exactly_one_index_per_tier(self) -> None:
+        """Concurrent get_index on the hot tier must create one index for it."""
+        created, factory = self._counting_factory()
+        strategy = TwoTierPartitionStrategy(index_factory=factory)
+        await self._assert_single_creation(strategy, "hot", created)
 
 
 class TestTwoTierPartitionStrategy:

@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Concurrent lazy index creation no longer loses writes.** All three
+  partition strategies raced on first access: two concurrent `get_index`
+  calls could each create an index, with the loser's instance (and any writes
+  applied to it) silently replaced. Creation is now guarded by an
+  `asyncio.Lock` with a double-checked fast path — the factory runs exactly
+  once per partition and every concurrent caller receives the same instance.
 - **`BucketedPartitionStrategy` routing is now actually deterministic.** Bucket
   ids are computed from a SHA-256 digest of the UTF-8 encoded partition key
   instead of Python's builtin `hash()`, which is randomized per process

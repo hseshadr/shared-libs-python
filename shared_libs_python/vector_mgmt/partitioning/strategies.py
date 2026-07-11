@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import datetime, timedelta
+from typing import Final
 
 from shared_libs_python.vector_mgmt.core.types import (
     IndexConfig,
@@ -70,6 +72,7 @@ class GlobalPartitionStrategy(PartitionStrategy):
         self.index_name = index_name
         self.config = config
         self._index: VectorIndex | None = None
+        self._creation_lock = asyncio.Lock()
 
     def get_partitions(
         self,
@@ -84,9 +87,11 @@ class GlobalPartitionStrategy(PartitionStrategy):
         return [self.index_name]
 
     async def get_index(self, partition_name: str) -> VectorIndex:
-        """Lazily create and cache the global index."""
+        """Lazily create and cache the global index (safe under concurrent calls)."""
         if self._index is None:
-            self._index = await self.index_factory(self.index_name, config=self.config)
+            async with self._creation_lock:
+                if self._index is None:
+                    self._index = await self.index_factory(self.index_name, config=self.config)
         return self._index
 
 
@@ -107,6 +112,7 @@ class BucketedPartitionStrategy(PartitionStrategy):
         self.num_buckets = num_buckets
         self.config = config
         self._indices: dict[str, VectorIndex] = {}
+        self._creation_lock = asyncio.Lock()
 
     def _get_bucket_id(self, partition_key: str | None) -> int:
         """Compute the bucket id for a partition key (``None`` → bucket 0).
@@ -142,12 +148,18 @@ class BucketedPartitionStrategy(PartitionStrategy):
         return [self._get_partition_name(self._get_bucket_id(partition_key))]
 
     async def get_index(self, partition_name: str) -> VectorIndex:
-        """Lazily create and cache the index for ``partition_name``."""
+        """Lazily create and cache the index for ``partition_name`` (concurrency-safe)."""
         if partition_name not in self._indices:
-            self._indices[partition_name] = await self.index_factory(
-                partition_name, config=self.config
-            )
+            async with self._creation_lock:
+                if partition_name not in self._indices:
+                    self._indices[partition_name] = await self.index_factory(
+                        partition_name, config=self.config
+                    )
         return self._indices[partition_name]
+
+
+_TIER_FACTORY_NAMES: Final[dict[str, str]] = {"hot": "hot_index", "cold": "cold_index"}
+"""Maps two-tier partition names to the index names handed to the factory."""
 
 
 class TwoTierPartitionStrategy(PartitionStrategy):
@@ -166,8 +178,8 @@ class TwoTierPartitionStrategy(PartitionStrategy):
         self.index_factory = index_factory
         self.hot_retention_days = hot_retention_days
         self.config = config
-        self._hot_index: VectorIndex | None = None
-        self._cold_index: VectorIndex | None = None
+        self._indices: dict[str, VectorIndex] = {}
+        self._creation_lock = asyncio.Lock()
 
     def get_partitions(
         self,
@@ -186,24 +198,17 @@ class TwoTierPartitionStrategy(PartitionStrategy):
         return ["hot", "cold"]
 
     async def get_index(self, partition_name: str) -> VectorIndex:
-        """Lazily create and cache the hot or cold index."""
-        if partition_name == "hot":
-            return await self._get_or_create_hot()
-        if partition_name == "cold":
-            return await self._get_or_create_cold()
-        raise ValueError(f"Unknown partition: {partition_name}")
-
-    async def _get_or_create_hot(self) -> VectorIndex:
-        """Return (creating on first call) the hot index."""
-        if self._hot_index is None:
-            self._hot_index = await self.index_factory("hot_index", config=self.config)
-        return self._hot_index
-
-    async def _get_or_create_cold(self) -> VectorIndex:
-        """Return (creating on first call) the cold index."""
-        if self._cold_index is None:
-            self._cold_index = await self.index_factory("cold_index", config=self.config)
-        return self._cold_index
+        """Lazily create and cache the hot or cold index (concurrency-safe)."""
+        factory_name = _TIER_FACTORY_NAMES.get(partition_name)
+        if factory_name is None:
+            raise ValueError(f"Unknown partition: {partition_name}")
+        if partition_name not in self._indices:
+            async with self._creation_lock:
+                if partition_name not in self._indices:
+                    self._indices[partition_name] = await self.index_factory(
+                        factory_name, config=self.config
+                    )
+        return self._indices[partition_name]
 
 
 def _classify_embedding(emb: VectorEmbedding, cutoff_date: datetime) -> str:
