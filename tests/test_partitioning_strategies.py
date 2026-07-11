@@ -4,7 +4,7 @@ import asyncio
 import os
 import subprocess
 import sys
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -339,6 +339,50 @@ class TestTwoTierPartitionStrategy:
         partitions = strategy.get_partitions(embeddings)
         assert "cold" in partitions
         assert len(partitions["cold"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_partitions_timezone_aware_timestamps(self, mock_index_factory) -> None:
+        """Timezone-aware ``created_at`` values must classify without raising.
+
+        Regression: the cutoff was naive, so aware timestamps (e.g. a "Z" or
+        "+00:00" suffix) raised TypeError on comparison.
+        """
+        strategy = TwoTierPartitionStrategy(
+            index_factory=mock_index_factory,
+            hot_retention_days=30,
+        )
+        now = datetime.now(UTC)
+        recent_aware = (now - timedelta(days=10)).isoformat().replace("+00:00", "Z")
+        old_aware = (now - timedelta(days=40)).isoformat()
+
+        embeddings = [
+            VectorEmbedding(entity_id="e1", embedding=[0.1], metadata={"created_at": recent_aware}),
+            VectorEmbedding(entity_id="e2", embedding=[0.2], metadata={"created_at": old_aware}),
+        ]
+        partitions = strategy.get_partitions(embeddings)
+        assert partitions["hot"][0].entity_id == "e1"
+        assert partitions["cold"][0].entity_id == "e2"
+
+    @pytest.mark.asyncio
+    async def test_get_partitions_mixed_naive_and_aware_timestamps(
+        self, mock_index_factory
+    ) -> None:
+        """Naive timestamps are interpreted as UTC and mix safely with aware ones."""
+        strategy = TwoTierPartitionStrategy(
+            index_factory=mock_index_factory,
+            hot_retention_days=30,
+        )
+        now = datetime.now(UTC)
+        naive_recent = (now - timedelta(days=10)).replace(tzinfo=None).isoformat()
+        aware_old = (now - timedelta(days=40)).isoformat()
+
+        embeddings = [
+            VectorEmbedding(entity_id="e1", embedding=[0.1], metadata={"created_at": naive_recent}),
+            VectorEmbedding(entity_id="e2", embedding=[0.2], metadata={"created_at": aware_old}),
+        ]
+        partitions = strategy.get_partitions(embeddings)
+        assert partitions["hot"][0].entity_id == "e1"
+        assert partitions["cold"][0].entity_id == "e2"
 
     @pytest.mark.asyncio
     async def test_get_search_partitions_returns_both(self, mock_index_factory) -> None:

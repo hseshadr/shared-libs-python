@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Timezone-aware `created_at` timestamps no longer raise `TypeError`.**
+  `TwoTierPartitionStrategy` compared parsed timestamps against a naive
+  cutoff, so any aware timestamp (e.g. a `Z` or `+00:00` suffix — the common
+  case for stored ISO-8601) crashed classification. The contract is now
+  explicit: all comparisons happen in UTC; both aware and naive `created_at`
+  values are accepted, and naive values are interpreted as UTC. The lenient
+  edges are unchanged (missing → hot, malformed → cold).
 - **Two-tier rebuild no longer crashes.** `IndexManager.rebuild_if_needed`
   routed rebuilds by `stats.index_name` ("hot_index"/"cold_index"), which
   `TwoTierPartitionStrategy.get_index` rejects — it only accepts the

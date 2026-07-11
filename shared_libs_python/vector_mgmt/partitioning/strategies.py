@@ -6,7 +6,7 @@ import asyncio
 import hashlib
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Final
 
 from shared_libs_python.vector_mgmt.core.types import (
@@ -186,8 +186,13 @@ class TwoTierPartitionStrategy(PartitionStrategy):
         embeddings: list[VectorEmbedding],
         partition_key: str | None = None,
     ) -> dict[str, list[VectorEmbedding]]:
-        """Classify each embedding as hot or cold based on its ``created_at``."""
-        cutoff_date = datetime.now() - timedelta(days=self.hot_retention_days)
+        """Classify each embedding as hot or cold based on its ``created_at``.
+
+        Timestamps are compared in UTC: the cutoff is timezone-aware, and both
+        aware and naive ``created_at`` values are accepted (naive values are
+        interpreted as UTC).
+        """
+        cutoff_date = datetime.now(UTC) - timedelta(days=self.hot_retention_days)
         tiered: dict[str, list[VectorEmbedding]] = {}
         for emb in embeddings:
             tiered.setdefault(_classify_embedding(emb, cutoff_date), []).append(emb)
@@ -212,12 +217,25 @@ class TwoTierPartitionStrategy(PartitionStrategy):
 
 
 def _classify_embedding(emb: VectorEmbedding, cutoff_date: datetime) -> str:
-    """Return ``"hot"`` or ``"cold"`` for ``emb`` based on ``metadata['created_at']``."""
+    """Return ``"hot"`` or ``"cold"`` for ``emb`` based on ``metadata['created_at']``.
+
+    The contract is lenient by design: missing timestamps classify as hot,
+    malformed ones as cold, and both naive and aware ISO-8601 strings are
+    accepted — naive values are interpreted as UTC. ``cutoff_date`` must be
+    timezone-aware so the comparison can never raise.
+    """
     created_at = emb.metadata.get("created_at")
     if not isinstance(created_at, str) or not created_at:
         return "hot"
     try:
-        emb_date = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-        return "hot" if emb_date > cutoff_date else "cold"
-    except (ValueError, AttributeError):
+        return "hot" if _parse_as_utc(created_at) > cutoff_date else "cold"
+    except ValueError:
         return "cold"
+
+
+def _parse_as_utc(timestamp: str) -> datetime:
+    """Parse an ISO-8601 string to a UTC-aware datetime (naive → assumed UTC)."""
+    parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
