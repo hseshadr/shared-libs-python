@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Releases now require the full quality gate.** The publish workflow's
+  `test` job ran pytest only and gated nothing — a tag push could publish
+  even with failing checks. It is replaced by a `gate` job that mirrors CI
+  (`uv run poe gate`: ruff lint, format check, mypy strict, xenon A, pytest
+  with ≥90% coverage), and both `build` and `release` `needs:` it. Nothing
+  publishes unless the gate passes on the tagged commit.
+
 ### Fixed
 - **Timezone-aware `created_at` timestamps no longer raise `TypeError`.**
   `TwoTierPartitionStrategy` compared parsed timestamps against a naive
