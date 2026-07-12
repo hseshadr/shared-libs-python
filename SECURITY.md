@@ -15,7 +15,7 @@ If you discover a security vulnerability in shared-libs-python, please report it
 ### How to Report
 
 1. **Do NOT** open a public GitHub issue
-2. Email security details to: [Your Email] (or create a private security advisory on GitHub)
+2. Open a private [GitHub Security Advisory](https://github.com/hseshadr/shared-libs-python/security/advisories/new) (Security tab -> "Report a vulnerability")
 3. Include:
    - Description of the vulnerability
    - Steps to reproduce
