@@ -5,8 +5,10 @@ on:
     tags:
       - 'v*'
 
+# Least privilege: default the whole workflow to read-only. Only the `release`
+# job — the single step that creates a GitHub Release — is granted contents:write.
 permissions:
-  contents: write  # Required for creating releases
+  contents: read
 
 jobs:
   # Zero-defect release rule: nothing builds or publishes unless the full
@@ -59,8 +61,13 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
       - name: Update version in pyproject.toml
+        # Route the tag-derived version through an env var (never interpolate a
+        # ${{ }} expression straight into the shell) so a crafted tag name can't
+        # inject shell/sed commands. Anchor ^version to the project version line.
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
         run: |
-          sed -i 's/version = ".*"/version = "${{ steps.get_version.outputs.VERSION }}"/' pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"${VERSION}\"/" pyproject.toml
 
       - name: Build package
         run: python -m build
@@ -74,6 +81,8 @@ jobs:
   release:
     needs: [gate, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Only this job creates a GitHub Release.
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
