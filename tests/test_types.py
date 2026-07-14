@@ -1,5 +1,8 @@
 """Tests for core types."""
 
+import pytest
+from pydantic import ValidationError
+
 from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
 
 
@@ -130,6 +133,16 @@ class TestIndexConfig:
         assert config.ef_search == 200
         assert config.dimension == 3072
         assert config.distance_metric == "l2"
+
+    def test_all_supported_distance_metrics_accepted(self) -> None:
+        """Every documented metric is a valid ``distance_metric`` value."""
+        for metric in ("cosine", "l2", "inner_product"):
+            assert IndexConfig(distance_metric=metric).distance_metric == metric
+
+    def test_unknown_distance_metric_is_rejected(self) -> None:
+        """The metric literal rejects anything outside the supported set."""
+        with pytest.raises(ValidationError):
+            IndexConfig(distance_metric="euclidean")
 
 
 class TestIndexStats:

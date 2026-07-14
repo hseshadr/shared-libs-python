@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **`IndexConfig.distance_metric` is now a typed literal, not a bare string.**
+  The field was `str = "cosine"` with a `# cosine, l2, inner_product` comment
+  carrying the invariant. It is now `Literal["cosine", "l2", "inner_product"]`
+  (exposed as the `DistanceMetric` alias), so Pydantic rejects an unsupported
+  metric at construction and `mypy` catches an invalid literal statically.
+  Public behavior for the three documented metrics is unchanged.
 - **Releases now require the full quality gate.** The publish workflow's
   `test` job ran pytest only and gated nothing — a tag push could publish
   even with failing checks. It is replaced by a `gate` job that mirrors CI
