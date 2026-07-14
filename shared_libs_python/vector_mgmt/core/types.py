@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Protocol, runtime_checkable
+from typing import Literal, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +12,9 @@ Scalar = str | int | float | bool | None
 
 Metadata = Mapping[str, Scalar]
 """Read-only metadata or filter mapping passed across the public API surface."""
+
+DistanceMetric = Literal["cosine", "l2", "inner_product"]
+"""Supported vector distance metrics carried through to a downstream backend."""
 
 
 class VectorEmbedding(BaseModel):
@@ -57,7 +60,7 @@ class IndexConfig(BaseModel):
     ef_construction: int = 200
     ef_search: int = 100
     dimension: int = 1536
-    distance_metric: str = "cosine"  # cosine, l2, inner_product
+    distance_metric: DistanceMetric = "cosine"
 
 
 class IndexStats(BaseModel):
