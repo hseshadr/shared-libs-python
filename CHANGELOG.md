@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-07-14
+
+### Added
+- **`shared_libs_python.errors` — canonical errors module.** The Python mirror
+  of the `@edgeproc/errors` TS package, so a failure carries the same stable
+  code and RFC 9457 shape on both sides of the portfolio. An app registers its
+  own catalog with `define_errors(...)`, classifies a raw transport/LLM failure
+  into one of its codes (`Registry.classify`), describes it through its own
+  i18n with the catalog English as fallback (`Registry.describe`), and
+  serializes to Problem Details (`Registry.to_problem_details` → the frozen
+  `ProblemDetails` dataclass). The optional `starter_pack` supplies 18 universal
+  codes (provider/config/network/timeout/device/integrity/internal) so a site
+  need not re-declare the common ones. Duplicate codes raise `DuplicateCodeError`
+  at registration. Public surface: `define_errors`, `Registry`, `starter_pack`,
+  `ProblemDetails`, `Catalog`/`CatalogEntry`/`Category`/`ErrorCode`/`MatchRule`/
+  `Params`/`ParamValue`/`TFunction`, `CanonicalError`, and the raw helpers
+  `http_status_of`/`error_name_of`/`error_text_of`. Additive — no change to any
+  existing module; this is the minor-version feature behind a 0.2.0 tag.
+
 ## [0.1.4] — 2026-07-13
 
 ### Changed
