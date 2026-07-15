@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Invalid bucket counts now fail at construction.**
+  `BucketedPartitionStrategy` rejects zero and negative `num_buckets` values at
+  the public boundary instead of failing later during routing with a modulo
+  error or producing invalid negative bucket identifiers.
+
 ## [0.2.0] — 2026-07-14
 
 ### Added
@@ -182,5 +188,4 @@ shared-libs-python` stack going public together; live demo at https://edge-reco.
 [0.1.2]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hseshadr/shared-libs-python/releases/tag/v0.1.0
-
 
