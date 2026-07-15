@@ -6,7 +6,8 @@ We provide security updates for the following versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+| 0.2.x   | :white_check_mark: |
+| < 0.2   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -74,8 +75,10 @@ Security updates will be:
 - Published as GitHub security advisories
 - Backported to supported versions
 
+The full trust, privacy, bounded-failure, and performance ownership contract is
+documented in [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+
 ## Thank You
 
 Thank you for helping keep shared-libs-python and its users safe!
-
 

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Distinguished-engineer operating contract and repeatable benchmark.**
+  `docs/OPERATIONS.md` now makes the package's trust, privacy, recovery, and
+  performance ownership explicit; `benchmarks/northstar.py` records fixed
+  p50/p95 budgets for 10,000-item routing and the in-memory reference search.
+
+### Changed
+- **Public status now matches the released `0.2.0` package.** README install
+  examples and `SECURITY.md` supported-version policy no longer point at the
+  stale `0.1.4`/`0.1.x` line; production-backend targets are labeled as
+  consumer guidance rather than library SLA claims.
+
 ### Fixed
 - **Invalid bucket counts now fail at construction.**
   `BucketedPartitionStrategy` rejects zero and negative `num_buckets` values at
@@ -188,4 +200,3 @@ shared-libs-python` stack going public together; live demo at https://edge-reco.
 [0.1.2]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hseshadr/shared-libs-python/releases/tag/v0.1.0
-
