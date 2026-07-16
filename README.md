@@ -32,6 +32,24 @@ edge-reco        the reference product: hybrid search + recommendations, in the 
 **Status:** v0.2.0, alpha. Small and focused by design — the foundation, not
 the headline.
 
+## Northstar status (verified 2026-07-16)
+
+The latest main commit is `c70999c`. It preserves empty-string partition keys instead
+of silently treating them as missing, while retaining compatibility with the legacy
+`tenant_id` API. The hosted CI run and the full local gate pass: 160 tests, 98.62%
+branch coverage, strict mypy, lint, formatting, and Grade-A complexity. Shared
+routing benchmarks are 6.2 ms p50 / 9.6 ms p95; the reference search path is
+19.3 ms p50 / 20.1 ms p95.
+
+```bash
+uv sync
+uv run poe gate
+```
+
+This repository is a protocol and reference implementation, not a hosted search
+service. The caller owns backend isolation, resource ceilings, and production SLOs;
+`edge-proc` supplies the local runtime that consumes these contracts.
+
 ## 60-second quickstart
 
 A teaser against the bundled in-memory reference index — produces real output.
