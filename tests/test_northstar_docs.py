@@ -1,5 +1,6 @@
 """Release-contract checks for security, privacy, reliability, and performance docs."""
 
+import re
 import tomllib
 from pathlib import Path
 
@@ -40,3 +41,18 @@ def test_readme_status_and_install_examples_match_package_version() -> None:
     assert f"**Status:** v{version}" in readme
     assert f"shared-libs-python.git@v{version}" in readme
     assert f"/download/v{version}/shared_libs_python-{version}-" in readme
+
+
+def test_installation_guide_has_no_stale_release_pins() -> None:
+    version = tomllib.loads(_read("pyproject.toml"))["project"]["version"]
+    guide = _read("docs/installation-guide.md")
+    assert set(re.findall(r"(?:@|/download/)v(\d+\.\d+\.\d+)", guide)) == {version}
+    assert f"shared-libs-python.git@v{version}" in guide
+
+
+def test_changelog_links_continue_from_the_current_release() -> None:
+    version = tomllib.loads(_read("pyproject.toml"))["project"]["version"]
+    changelog = _read("CHANGELOG.md")
+    repository = "https://github.com/hseshadr/shared-libs-python"
+    assert f"[Unreleased]: {repository}/compare/v{version}...HEAD" in changelog
+    assert f"[{version}]: {repository}/compare/v0.1.4...v{version}" in changelog

@@ -1,283 +1,147 @@
-# Installation Guide
+# Installation guide
 
-This guide explains how to install `shared-libs-python` in your projects.
-
-## Prerequisites
-
-- **Python 3.13+** (required - the package will not install on older versions)
-- [uv](https://github.com/astral-sh/uv) package manager (recommended) or pip
-- Access to the GitHub repository (for private repos)
-
-## Quick Start
+**TL;DR.** `shared-libs-python` supports Python 3.13+ and is distributed from
+the public GitHub repository. Pin the latest released tag for applications:
 
 ```bash
-# Ensure you have Python 3.13+
+uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+```
+
+That installs the real library. To see its complete partition-and-search path
+against realistic in-memory data, clone the repository and run:
+
+```bash
+bash examples/run_loop.sh
+```
+
+## Requirements
+
+- Python 3.13 or newer
+- [`uv`](https://docs.astral.sh/uv/) (recommended) or `pip`
+
+Create a clean environment with `uv`:
+
+```bash
 uv python install 3.13
 uv venv --python 3.13
 source .venv/bin/activate
-
-# Install from git tag (recommended for private repos)
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
 ```
 
-## Installation Methods
+## Install a released version
 
-### Method 1: From Git Tag (Recommended)
-
-This is the **recommended method for private repositories** as it uses your local git credentials automatically.
+Use the immutable Git tag so a later commit cannot silently change an
+application's dependency:
 
 ```bash
-# Using uv
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
+# uv
+uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
 
-# Using pip
-pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
+# pip
+python -m pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
 ```
 
-### Method 2: From GitHub Release Artifact
-
-> **Note:** Direct wheel URLs return 404 for private repositories. Use Method 1 (git tag) instead for private repos.
-
-For **public repositories only**:
+The GitHub Release also contains a wheel:
 
 ```bash
-# Using uv
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.2/shared_libs_python-0.1.2-py3-none-any.whl
-
-# Using pip
-pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.2/shared_libs_python-0.1.2-py3-none-any.whl
+uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.2.0/shared_libs_python-0.2.0-py3-none-any.whl
 ```
 
-### Method 3: From Git Branch (Latest)
-
-Install the latest from main branch (useful for development):
-
-```bash
-# Using uv
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git
-
-# Using pip
-pip install git+https://github.com/hseshadr/shared-libs-python.git
-```
-
-## Adding to pyproject.toml
-
-### Pinned Version (Recommended for Production)
+For `pyproject.toml`:
 
 ```toml
 [project]
 requires-python = ">=3.13"
 dependencies = [
-    "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2",
+  "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0",
 ]
 ```
 
-### Latest from Main Branch
+For `requirements.txt`:
 
-```toml
-[project]
-dependencies = [
-    "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@main",
-]
+```text
+shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
 ```
 
-## Adding to requirements.txt
-
-```txt
-# Pinned to tag (recommended)
-shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
-```
-
-## Private Repository Access
-
-Since this is a private repository, you need proper authentication configured.
-
-### Method A: HTTPS with Git Credential Helper (Simplest)
-
-If you've already authenticated with GitHub via `gh auth login` or git credential helper, `git+https://` URLs will work automatically:
+## Verify the installation
 
 ```bash
-# This uses your cached git credentials
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
-```
-
-### Method B: SSH (Recommended for CI/CD)
-
-```bash
-# Ensure SSH key is configured with GitHub
-uv pip install git+ssh://git@github.com/hseshadr/shared-libs-python.git@v0.1.2
-```
-
-In `pyproject.toml`:
-```toml
-dependencies = [
-    "shared-libs-python @ git+ssh://git@github.com/hseshadr/shared-libs-python.git@v0.1.2",
-]
-```
-
-### Method C: Personal Access Token
-
-```bash
-# Set token in environment
-export GITHUB_TOKEN=ghp_xxxxxxxxxxxx
-
-# Install with token embedded in URL
-uv pip install git+https://${GITHUB_TOKEN}@github.com/hseshadr/shared-libs-python.git@v0.1.2
-```
-
-### In CI/CD (GitHub Actions)
-
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-
-      - name: Configure git credentials for private deps
-        run: |
-          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
-      - name: Install dependencies
-        run: |
-          uv sync
-```
-
-Or install directly with token:
-
-```yaml
-- name: Install private dependencies
-  run: |
-    uv pip install git+https://${{ secrets.GITHUB_TOKEN }}@github.com/hseshadr/shared-libs-python.git@v0.1.2
-```
-
-## Verifying Installation
-
-```python
-# Check version
+python - <<'PY'
 import shared_libs_python
-print(f"Version: {shared_libs_python.__version__}")
+from shared_libs_python import BucketedPartitionStrategy, VectorEmbedding
 
-# Verify imports work
-from shared_libs_python import (
-    IndexManager,
-    GlobalPartitionStrategy,
-    BucketedPartitionStrategy,
-    TwoTierPartitionStrategy,
-    IndexConfig,
-    VectorEmbedding,
-)
-
-# Test creating objects
-config = IndexConfig(m=16, ef_construction=100)
-emb = VectorEmbedding(entity_id="test", embedding=[0.1, 0.2, 0.3])
-
-print("Installation successful!")
+print(f"shared-libs-python {shared_libs_python.__version__}")
+print(BucketedPartitionStrategy)
+print(VectorEmbedding(entity_id="example", embedding=[0.1, 0.2]))
+PY
 ```
 
-## Available Versions
-
-Check the [Releases page](https://github.com/hseshadr/shared-libs-python/releases) for all available versions.
-
-| Version | Release Date | Notes |
-|---------|--------------|-------|
-| v0.1.2  | 2025-12-29   | Initial release |
-
-## Updating to a New Version
+Then follow the root [README quickstart](../README.md#60-second-quickstart) or
+run the bundled end-to-end examples:
 
 ```bash
-# Update to specific version
-uv pip install --upgrade git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+bash examples/run_loop.sh
+```
 
-# Or update pyproject.toml version and re-sync
-uv sync
+## Development installs
+
+Contributors should clone the repository so the lockfile and complete quality
+gate are available:
+
+```bash
+git clone https://github.com/hseshadr/shared-libs-python.git
+cd shared-libs-python
+uv sync --all-extras --dev
+uv run poe gate
+```
+
+Installing the moving `main` branch is intentionally a development-only path:
+
+```bash
+uv pip install git+https://github.com/hseshadr/shared-libs-python.git@main
+```
+
+## Upgrade or reinstall
+
+Change the pinned tag, then resynchronize the environment. For the current
+release:
+
+```bash
+uv pip install --upgrade --force-reinstall \
+  git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
 ```
 
 ## Troubleshooting
 
-### Python Version Error
+### Python version mismatch
 
-```
-Because the current Python version (3.12.x) does not satisfy Python>=3.13
-```
-
-**Solution:** This package requires Python 3.13+. Create a venv with Python 3.13:
+If the resolver says the current interpreter does not satisfy Python 3.13,
+create the environment explicitly:
 
 ```bash
 uv python install 3.13
 uv venv --python 3.13
 source .venv/bin/activate
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
 ```
 
-### 404 Not Found on Wheel URL
+### Tag or artifact not found
 
-```
-HTTP status client error (404 Not Found) for url
-```
-
-**Solution:** Direct wheel URLs don't work for private repositories. Use git+https instead:
+Confirm the tag on the public repository:
 
 ```bash
-# Instead of this (fails for private repos):
-uv pip install https://github.com/.../shared_libs_python-0.1.2-py3-none-any.whl
-
-# Use this:
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
+git ls-remote --tags https://github.com/hseshadr/shared-libs-python.git
 ```
 
-### Authentication Errors
+Released versions and artifacts are listed on the
+[GitHub Releases page](https://github.com/hseshadr/shared-libs-python/releases).
 
-```
-403 Forbidden
-Repository not found
-```
+### Cached older version
 
-**Solutions:**
-1. Ensure you have access to the repository
-2. Authenticate with GitHub: `gh auth login`
-3. Check your SSH key: `ssh -T git@github.com`
-4. For tokens, ensure it has `repo` scope
-
-### Version/Tag Not Found
-
-```
-fatal: couldn't find remote ref refs/tags/v0.1.2
-```
-
-**Solutions:**
-1. Check available tags:
-   ```bash
-   git ls-remote --tags https://github.com/hseshadr/shared-libs-python.git
-   ```
-2. Check the [Releases page](https://github.com/hseshadr/shared-libs-python/releases)
-
-### Dependency Conflicts
+Prefer an explicit forced reinstall over clearing the entire shared `uv` cache:
 
 ```bash
-# Show what's installed
-uv pip list | grep shared
-
-# Force reinstall
-uv pip install --force-reinstall git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
+uv pip install --upgrade --force-reinstall \
+  git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
 ```
 
-### Cache Issues
-
-If you're getting stale versions:
-
-```bash
-# Clear uv cache
-uv cache clean
-
-# Reinstall
-uv pip install --no-cache git+https://github.com/hseshadr/shared-libs-python.git@v0.1.2
-```
+The supported release line and vulnerability-reporting process are documented
+in [SECURITY.md](../SECURITY.md).
