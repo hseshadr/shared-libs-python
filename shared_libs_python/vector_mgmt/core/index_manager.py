@@ -67,9 +67,9 @@ class IndexManager:
     def _compose_filters(
         self, filters: Metadata | None, partition_key: str | None
     ) -> dict[str, Scalar]:
-        """Merge caller filters with the partition-key filter when truthy."""
+        """Merge caller filters with the partition-key filter when provided."""
         merged: dict[str, Scalar] = dict(filters) if filters else {}
-        if partition_key:
+        if partition_key is not None:
             merged[self.partition_key_name] = partition_key
         return merged
 

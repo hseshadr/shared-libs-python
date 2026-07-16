@@ -11,6 +11,7 @@ from shared_libs_python.vector_mgmt.partitioning.strategies import (
     GlobalPartitionStrategy,
     TwoTierPartitionStrategy,
 )
+from shared_libs_python.vector_mgmt.testing import in_memory_factory
 
 
 class TestIndexManager:
@@ -74,6 +75,37 @@ class TestIndexManager:
             partition_key="tenant_1",
         )
         assert len(results) >= 0  # Mock returns results
+
+    @pytest.mark.asyncio
+    async def test_search_with_empty_global_partition_key_is_scoped(
+        self,
+    ) -> None:
+        """An explicit empty key must not become an unscoped global search."""
+        strategy = GlobalPartitionStrategy(index_factory=in_memory_factory, index_name="global")
+        manager = IndexManager(partition_strategy=strategy)
+        await manager.insert(
+            [
+                VectorEmbedding(entity_id="empty", embedding=[1.0], tenant_id=""),
+                VectorEmbedding(entity_id="other", embedding=[1.0], tenant_id="tenant-a"),
+            ]
+        )
+
+        results = await manager.search([1.0], k=10, partition_key="")
+
+        assert [entity_id for entity_id, _ in results] == ["empty"]
+
+    @pytest.mark.asyncio
+    async def test_search_with_empty_bucketed_partition_key_finds_matching_entity(
+        self,
+    ) -> None:
+        """An explicit empty key must route insertion and search to one bucket."""
+        strategy = BucketedPartitionStrategy(index_factory=in_memory_factory, num_buckets=256)
+        manager = IndexManager(partition_strategy=strategy)
+        await manager.insert([VectorEmbedding(entity_id="empty", embedding=[1.0], tenant_id="")])
+
+        results = await manager.search([1.0], k=10, partition_key="")
+
+        assert [entity_id for entity_id, _ in results] == ["empty"]
 
     @pytest.mark.asyncio
     async def test_search_with_filters(self, mock_index_factory) -> None:
