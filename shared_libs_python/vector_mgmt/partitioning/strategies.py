@@ -140,7 +140,9 @@ class BucketedPartitionStrategy(PartitionStrategy):
         """Bucket embeddings by partition key, falling back to ``partition_key``."""
         buckets: dict[str, list[VectorEmbedding]] = {}
         for emb in embeddings:
-            emb_partition_key = self._extract_key(emb) or partition_key
+            emb_partition_key = self._extract_key(emb)
+            if emb_partition_key is None:
+                emb_partition_key = partition_key
             partition_name = self._get_partition_name(self._get_bucket_id(emb_partition_key))
             buckets.setdefault(partition_name, []).append(emb)
         return buckets
