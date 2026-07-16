@@ -107,6 +107,8 @@ class BucketedPartitionStrategy(PartitionStrategy):
         partition_key_extractor: PartitionKeyExtractor | None = None,
     ) -> None:
         """Initialize the bucketed partition strategy."""
+        if num_buckets < 1:
+            raise ValueError("num_buckets must be at least 1")
         super().__init__(partition_key_name, partition_key_extractor)
         self.index_factory = index_factory
         self.num_buckets = num_buckets

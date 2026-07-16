@@ -98,6 +98,22 @@ class TestGlobalPartitionStrategy:
 class TestBucketedPartitionStrategy:
     """Tests for BucketedPartitionStrategy."""
 
+    @pytest.mark.parametrize("num_buckets", [0, -1])
+    def test_should_reject_non_positive_bucket_count_when_constructed(
+        self,
+        mock_index_factory,
+        num_buckets: int,
+    ) -> None:
+        """A bad count must fail at the boundary, not during later routing."""
+        # Given a valid index factory and an invalid bucket count
+        # When the bucket strategy is constructed
+        # Then it fails closed before any key can reach modulo routing
+        with pytest.raises(ValueError, match="num_buckets must be at least 1"):
+            BucketedPartitionStrategy(
+                index_factory=mock_index_factory,
+                num_buckets=num_buckets,
+            )
+
     @pytest.mark.asyncio
     async def test_get_partitions_distributes_to_buckets(self, mock_index_factory) -> None:
         """Test that embeddings are distributed across buckets."""

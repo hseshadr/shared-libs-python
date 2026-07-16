@@ -29,7 +29,7 @@ edge-reco        the reference product: hybrid search + recommendations, in the 
        └─ shared-libs-python   ← you are here: the vector-partitioning protocol
 ```
 
-**Status:** v0.1.4, alpha. Small and focused by design — the foundation, not
+**Status:** v0.2.0, alpha. Small and focused by design — the foundation, not
 the headline.
 
 ## 60-second quickstart
@@ -72,16 +72,16 @@ FAISS-backed example.
 
 ```bash
 # From a git tag (recommended)
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.1.4
+uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
 
 # Or from a GitHub Release wheel
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.1.4/shared_libs_python-0.1.4-py3-none-any.whl
+uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.2.0/shared_libs_python-0.2.0-py3-none-any.whl
 ```
 
 In your `pyproject.toml`:
 ```toml
 dependencies = [
-  "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.1.4",
+  "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0",
 ]
 ```
 
@@ -140,6 +140,8 @@ optional `partition_key_extractor` callable.
 
 The deep dive (rationale, scaling math, recommended `m` / `ef_construction`)
 lives in [`docs/vector-mgmt-architecture.md`](docs/vector-mgmt-architecture.md).
+The security, privacy, reliability, and measured-performance ownership contract
+lives in [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
 
 ### Generic partition keys
 

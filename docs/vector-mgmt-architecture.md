@@ -534,7 +534,12 @@ WHERE tenant_id = $1;  -- Then filter (inefficient)
 | 1M - 10M | Consider bucketing if latency issues |
 | 10M+ | Bucket or partition required |
 
-### Performance Targets
+### Consumer performance targets (guidance, not a library SLA)
+
+These targets describe a production backend an adopter may choose to operate;
+`shared-libs-python` does not ship that HNSW service or claim its latency. The
+repeatable benchmark for library-owned routing and the in-memory reference lives
+in [`OPERATIONS.md`](OPERATIONS.md).
 
 - **Query Latency (p95)**: < 100ms
 - **Recall@20**: > 95%
@@ -606,9 +611,8 @@ WHERE tenant_id = $1;  -- Then filter (inefficient)
 ---
 
 **Document Version**: 1.1
-**Last Updated**: 2025-12-29
-**Status**: Specification for shared-libs-python library
+**Last Updated**: 2026-07-15
+**Status**: Consumer architecture guidance; shipped code is the typed partitioning protocol
 
 **Library**: `~/dev/shared-libs-python`
 **Package**: `shared_libs_python.vector_mgmt`
-

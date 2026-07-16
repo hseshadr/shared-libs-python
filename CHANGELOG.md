@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Distinguished-engineer operating contract and repeatable benchmark.**
+  `docs/OPERATIONS.md` now makes the package's trust, privacy, recovery, and
+  performance ownership explicit; `benchmarks/northstar.py` records fixed
+  p50/p95 budgets for 10,000-item routing and the in-memory reference search.
+
+### Changed
+- **Public status now matches the released `0.2.0` package.** README install
+  examples and `SECURITY.md` supported-version policy no longer point at the
+  stale `0.1.4`/`0.1.x` line; production-backend targets are labeled as
+  consumer guidance rather than library SLA claims.
+- **Workflow actions are immutable.** CI, security audit, artifact handoff,
+  Codecov, gitleaks, and GitHub release actions are pinned to full commit SHAs,
+  with a regression test that rejects moving tags.
+
+### Fixed
+- **Invalid bucket counts now fail at construction.**
+  `BucketedPartitionStrategy` rejects zero and negative `num_buckets` values at
+  the public boundary instead of failing later during routing with a modulo
+  error or producing invalid negative bucket identifiers.
+
 ## [0.2.0] — 2026-07-14
 
 ### Added
@@ -176,11 +197,10 @@ shared-libs-python` stack going public together; live demo at https://edge-reco.
 - Full type hints and mypy strict compliance
 - Protocol-based design for extensibility
 
-[Unreleased]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/hseshadr/shared-libs-python/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hseshadr/shared-libs-python/releases/tag/v0.1.0
-
-
