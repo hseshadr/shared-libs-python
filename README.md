@@ -34,7 +34,7 @@ the headline.
 
 ## Northstar status (verified 2026-07-16)
 
-The latest main commit is `c70999c`. It preserves empty-string partition keys instead
+The verified application commit is `c70999c`. It preserves empty-string partition keys instead
 of silently treating them as missing, while retaining compatibility with the legacy
 `tenant_id` API. The hosted CI run and the full local gate pass: 160 tests, 98.62%
 branch coverage, strict mypy, lint, formatting, and Grade-A complexity. Shared
