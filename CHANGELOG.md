@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   examples and `SECURITY.md` supported-version policy no longer point at the
   stale `0.1.4`/`0.1.x` line; production-backend targets are labeled as
   consumer guidance rather than library SLA claims.
+- **Workflow actions are immutable.** CI, security audit, artifact handoff,
+  Codecov, gitleaks, and GitHub release actions are pinned to full commit SHAs,
+  with a regression test that rejects moving tags.
 
 ### Fixed
 - **Invalid bucket counts now fail at construction.**
