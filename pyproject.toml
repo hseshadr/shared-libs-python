@@ -61,9 +61,24 @@ Documentation = "https://github.com/hseshadr/shared-libs-python#readme"
 Repository = "https://github.com/hseshadr/shared-libs-python"
 Issues = "https://github.com/hseshadr/shared-libs-python/issues"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["shared_libs_python*"]
+[tool.hatch.build.targets.wheel]
+packages = ["shared_libs_python"]
+
+[tool.hatch.build.targets.sdist]
+# Lean sdist: distribution sources only. The ~5 MB of rendered PNG diagrams under
+# docs/, the resolved uv.lock, and dev-only tooling (.github, .claude, CLAUDE.md)
+# live in the git repo — they have no place in the published tarball.
+only-include = [
+    "shared_libs_python",
+    "tests",
+    "examples",
+    "benchmarks",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+]
 
 [tool.ruff]
 target-version = "py313"
