@@ -30,16 +30,14 @@ edge-reco        the reference product: hybrid search + recommendations, in the 
 ```
 
 **Status:** v0.2.0, alpha. Small and focused by design — the foundation, not
-the headline.
+the headline. The hosted CI run and the full local gate pass: 160 tests,
+98.62% branch coverage, strict mypy, lint, and formatting.
 
-## Status (verified 2026-07-16)
-
-The verified application commit is `c70999c`. It preserves empty-string partition keys instead
-of silently treating them as missing, while retaining compatibility with the legacy
-`tenant_id` API. The hosted CI run and the full local gate pass: 160 tests, 98.62%
-branch coverage, strict mypy, lint, formatting, and Grade-A complexity. Shared
-routing benchmarks are 6.2 ms p50 / 9.6 ms p95; the reference search path is
-19.3 ms p50 / 20.1 ms p95.
+On one developer laptop, the bundled benchmark (`benchmarks/benchmark.py`)
+reports partitioning 10,000 embeddings across 256 buckets at 5.6 ms p50 / 5.7 ms
+p95, and search against the bundled in-memory reference index at 18.5 ms p50 /
+18.7 ms p95 — see [`InMemoryVectorIndex`](#60-second-quickstart) below for what
+that reference index is (and isn't).
 
 ```bash
 uv sync
