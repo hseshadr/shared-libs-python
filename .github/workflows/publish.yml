@@ -1,101 +1,30 @@
-name: Publish Package
-
+# shared-libs-python — .github/workflows/publish.yml
+# PyPI release via OIDC Trusted Publishing. A `v*` tag push is the whole trigger; there is
+# NO PyPI token in this repo. This REPLACES the previous token/build + GitHub-Release flow:
+# the reusable python-publish workflow re-runs `uv run poe gate` on the tagged ref and then
+# publishes via OIDC (short-lived token, PEP 740 attestations) — no stored API token.
+#
+# One-time bootstrap (deferred — needs a human): register the GitHub Actions trusted
+# publisher on PyPI as a PENDING publisher (shared-libs-python is not yet on PyPI). After
+# the first OIDC publish creates the project, every `git tag vX.Y.Z && git push --tags`
+# releases automatically. The workflow filename + repo + owner ARE the credential.
+#
+# NOTE: hseshadr/ci is referenced at @ci-v2, which is not cut yet (pending). The reusable
+# OIDC workflows live on the ci repo's feat/oidc-publish branch until that tag is created.
+name: Publish (PyPI, OIDC)
 on:
   push:
-    tags:
-      - 'v*'
-
-# Least privilege: default the whole workflow to read-only. Only the `release`
-# job — the single step that creates a GitHub Release — is granted contents:write.
+    tags: ["v*"]
+# Top-level read-only; the OIDC write scope is granted on the publish job only (the ci repo
+# security policy forbids a top-level `id-token: write`).
 permissions:
   contents: read
-
 jobs:
-  # Zero-defect release rule: nothing builds or publishes unless the full
-  # quality gate passes on the tagged commit. Mirrors ci.yml / `poe gate`
-  # exactly: ruff lint -> ruff format --check -> mypy strict -> xenon A ->
-  # pytest (>=90% coverage).
-  gate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-
-      - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
-        with:
-          version: "latest"
-
-      - name: Install dependencies
-        run: uv sync
-
-      - name: Run the gate
-        run: uv run poe gate
-
-  build:
-    needs: gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-
-      - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
-        with:
-          version: "latest"
-
-      - name: Install build dependencies
-        run: |
-          uv pip install --system build
-
-      - name: Extract version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
-
-      - name: Update version in pyproject.toml
-        # Route the tag-derived version through an env var (never interpolate a
-        # ${{ }} expression straight into the shell) so a crafted tag name can't
-        # inject shell/sed commands. Anchor ^version to the project version line.
-        env:
-          VERSION: ${{ steps.get_version.outputs.VERSION }}
-        run: |
-          sed -i "s/^version = \".*\"/version = \"${VERSION}\"/" pyproject.toml
-
-      - name: Build package
-        run: python -m build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: dist
-          path: dist/
-
-  release:
-    needs: [gate, build]
-    runs-on: ubuntu-latest
+  publish:
     permissions:
-      contents: write  # Only this job creates a GitHub Release.
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
-        with:
-          files: dist/*
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      id-token: write # OIDC — PyPI verifies this against the registered trusted publisher.
+      contents: read
+    uses: hseshadr/ci/.github/workflows/python-publish.yml@ci-v2
+    with:
+      working-directory: "."
+      sync-args: "--frozen --all-extras"
