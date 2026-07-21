@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fake version. `tests/test_version.py` now asserts the resolved version is not
   the fallback *and* that every lookup site names the distribution
   `pyproject.toml` actually declares, so the two can never drift apart again.
-- **Distinguished-engineer operating contract and repeatable benchmark.**
+- **Operating contract and repeatable benchmark.**
   `docs/OPERATIONS.md` now makes the package's trust, privacy, recovery, and
   performance ownership explicit; `benchmarks/benchmark.py` records fixed
   p50/p95 budgets for 10,000-item routing and the in-memory reference search.

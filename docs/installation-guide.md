@@ -1,10 +1,10 @@
 # Installation guide
 
 **TL;DR.** `edgeproc-core` supports Python 3.13+ and is distributed from
-the public GitHub repository. Pin the latest released tag for applications:
+the public GitHub repository. Pin the commit below:
 
 ```bash
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+uv pip install "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472"
 ```
 
 That installs the real library. To see its complete partition-and-search path
@@ -27,23 +27,17 @@ uv venv --python 3.13
 source .venv/bin/activate
 ```
 
-## Install a released version
+## Install a pinned version
 
-Use the immutable Git tag so a later commit cannot silently change an
-application's dependency:
+Pin a full commit SHA so a later commit cannot silently change an application's
+dependency:
 
 ```bash
 # uv
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+uv pip install "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472"
 
 # pip
-python -m pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
-```
-
-The GitHub Release also contains a wheel:
-
-```bash
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.2.0/edgeproc_core-0.2.0-py3-none-any.whl
+python -m pip install "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472"
 ```
 
 For `pyproject.toml`:
@@ -52,15 +46,27 @@ For `pyproject.toml`:
 [project]
 requires-python = ">=3.13"
 dependencies = [
-  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0",
+  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472",
 ]
 ```
 
 For `requirements.txt`:
 
 ```text
-edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472
 ```
+
+### Why a commit and not a tag or a PyPI release?
+
+`edgeproc-core` is not on PyPI yet, and the newest tag — `v0.2.0` — was cut
+*before* the import package was renamed from `shared_libs_python` to
+`edgeproc_core`. Installing that tag therefore succeeds but gives you the old
+module name, and the verification snippet below would fail with
+`ModuleNotFoundError: No module named 'edgeproc_core'`.
+
+A full commit SHA is exactly as immutable as a tag — Git cannot repoint it — so
+pinning one gives up nothing but brevity. The planned `0.3.0` release will
+publish to PyPI and restore the short `pip install edgeproc-core` form.
 
 ## Verify the installation
 
@@ -102,12 +108,12 @@ uv pip install git+https://github.com/hseshadr/shared-libs-python.git@main
 
 ## Upgrade or reinstall
 
-Change the pinned tag, then resynchronize the environment. For the current
-release:
+Change the pinned commit, then resynchronize the environment. For the currently
+documented pin:
 
 ```bash
 uv pip install --upgrade --force-reinstall \
-  git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472"
 ```
 
 ## Troubleshooting
@@ -123,16 +129,24 @@ uv venv --python 3.13
 source .venv/bin/activate
 ```
 
-### Tag or artifact not found
+### Commit not found
 
-Confirm the tag on the public repository:
+Confirm the pinned commit exists on the public repository:
 
 ```bash
-git ls-remote --tags https://github.com/hseshadr/shared-libs-python.git
+git ls-remote https://github.com/hseshadr/shared-libs-python.git | \
+  grep 6cdf8475b223262821622a021c561aed9213a472
 ```
 
-Released versions and artifacts are listed on the
-[GitHub Releases page](https://github.com/hseshadr/shared-libs-python/releases).
+### `ModuleNotFoundError: No module named 'edgeproc_core'`
+
+You almost certainly installed the `v0.2.0` tag rather than the pinned commit.
+That tag predates the rename and ships the old `shared_libs_python` module.
+Check what is actually installed and reinstall from the commit:
+
+```bash
+uv pip list | grep -i -E "edgeproc|shared"
+```
 
 ### Cached older version
 
@@ -140,7 +154,7 @@ Prefer an explicit forced reinstall over clearing the entire shared `uv` cache:
 
 ```bash
 uv pip install --upgrade --force-reinstall \
-  git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472"
 ```
 
 The supported release line and vulnerability-reporting process are documented

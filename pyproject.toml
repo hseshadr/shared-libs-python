@@ -141,11 +141,14 @@ exclude_lines = [
 fail_under = 90.0
 
 [tool.poe.tasks]
-lint = "ruff check edgeproc_core/ tests/"
-fmt = "ruff format edgeproc_core/ tests/"
-fmt-check = "ruff format --check edgeproc_core/ tests/"
-typecheck = "mypy --strict edgeproc_core/"
+lint = "ruff check edgeproc_core/ tests/ scripts/"
+fmt = "ruff format edgeproc_core/ tests/ scripts/"
+fmt-check = "ruff format --check edgeproc_core/ tests/ scripts/"
+typecheck = "mypy --strict edgeproc_core/ scripts/"
 complexity = "xenon --max-absolute A --max-modules A --max-average A edgeproc_core/"
 test = "pytest"
+# Runs after `test` so it reads the coverage.xml that run just wrote: the README's
+# published figures must match the measurement, not a stale memory of it.
+coverage-claim = "python scripts/check_coverage_claim.py"
 # The canonical quality gate (house standard §3). Mirrors CI exactly, both directions.
-gate = ["lint", "fmt-check", "typecheck", "complexity", "test"]
+gate = ["lint", "fmt-check", "typecheck", "complexity", "test", "coverage-claim"]

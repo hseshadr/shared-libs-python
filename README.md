@@ -30,11 +30,17 @@ edge-reco        hybrid search + recommendations, running in the browser
 ```
 
 **Status:** v0.2.0, alpha. Small and focused by design — the foundation, not
-the headline. The hosted CI run and the full local gate pass at
-98.41% branch coverage, with strict mypy, lint, and formatting. That really is
-*branch* coverage — the gate runs `--cov-branch`, and the ≥90% branch coverage
-floor is enforced there, not just asserted here. (Statement coverage, the
-looser measure, is 98.62%.)
+the headline. The hosted CI run and the full local gate pass at **98.41%
+coverage measured with branches enabled**, with strict mypy, lint, and
+formatting. The gate runs `--cov-branch` and enforces a ≥90% branch coverage
+floor, so that is a measurement and not an assertion. Split into its two parts:
+98.62% of statements and 97.54% of branches are covered. A gate step re-derives
+all three figures from `coverage.xml` on every run, so this paragraph cannot
+quietly drift away from what the suite actually measures.
+
+`main` is ahead of the last release tag: the import package was renamed to
+`edgeproc_core` after `v0.2.0` was cut, so installs pin a commit rather than a
+tag. See [Installation](#installation) for the one command that works today.
 
 The bundled benchmark (`benchmarks/benchmark.py`) reports
 **routing p50 5.8 ms / p95 6.0 ms** for 10,000 embeddings across 256 buckets,
@@ -99,20 +105,35 @@ FAISS-backed example.
 
 ## Installation
 
-```bash
-# From a git tag (recommended)
-uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+Requires **Python 3.13 or newer**.
 
-# Or from a GitHub Release wheel
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.2.0/edgeproc_core-0.2.0-py3-none-any.whl
+`edgeproc-core` is not on PyPI yet, and no release tag carries the current
+import package. Install from the pinned `main` commit — this is the exact code
+every example on this page is written against:
+
+```bash
+uv pip install "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472"
 ```
 
 In your `pyproject.toml`:
 ```toml
 dependencies = [
-  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0",
+  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472",
 ]
 ```
+
+Verify it worked:
+```bash
+python -c "import edgeproc_core; print(edgeproc_core.__version__)"
+# 0.2.0
+```
+
+> **Why pin a commit instead of a tag?** The newest tag, `v0.2.0`, predates the
+> rename of the import package to `edgeproc_core`. Installing that tag gives you
+> the old `shared_libs_python` module, so every example here would raise
+> `ModuleNotFoundError`. A full commit SHA is exactly as immutable as a tag, so
+> pinning one is just as safe — it is simply longer to type. The planned `0.3.0`
+> release will restore the short tag-based and PyPI installs.
 
 For local development:
 ```bash
