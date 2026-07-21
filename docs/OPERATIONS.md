@@ -1,6 +1,6 @@
 # Security, privacy, reliability, and performance contract
 
-**TL;DR.** `shared-libs-python` is an in-process routing protocol, not a hosted
+**TL;DR.** `edgeproc-core` is an in-process routing protocol, not a hosted
 vector database. It performs no network or filesystem I/O and emits no telemetry.
 It deterministically chooses partitions and delegates storage, authorization,
 timeouts, durability, and query execution to the caller-provided `VectorIndex`.

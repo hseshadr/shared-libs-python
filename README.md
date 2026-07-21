@@ -1,4 +1,4 @@
-# shared-libs-python
+# edgeproc-core
 
 [![CI](https://github.com/hseshadr/shared-libs-python/actions/workflows/ci.yml/badge.svg)](https://github.com/hseshadr/shared-libs-python/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/hseshadr/shared-libs-python/branch/main/graph/badge.svg)](https://codecov.io/gh/hseshadr/shared-libs-python)
@@ -26,12 +26,12 @@ nothing more:
 ```
 edge-reco        hybrid search + recommendations, running in the browser
   └─ edge-proc   ships big files to devices and proves they arrived unmodified
-       └─ shared-libs-python   ← you are here: the vector-partitioning protocol
+       └─ edgeproc-core   ← you are here: the vector-partitioning protocol
 ```
 
 **Status:** v0.2.0, alpha. Small and focused by design — the foundation, not
-the headline. The hosted CI run and the full local gate pass: 220 tests,
-98.41% branch coverage, strict mypy, lint, and formatting. That really is
+the headline. The hosted CI run and the full local gate pass at
+98.41% branch coverage, with strict mypy, lint, and formatting. That really is
 *branch* coverage — the gate runs `--cov-branch`, and the ≥90% branch coverage
 floor is enforced there, not just asserted here. (Statement coverage, the
 looser measure, is 98.62%.)
@@ -67,9 +67,9 @@ A teaser against the bundled in-memory reference index — produces real output.
 
 ```python
 import asyncio
-from shared_libs_python import GlobalPartitionStrategy, IndexManager
-from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
-from shared_libs_python.vector_mgmt.testing import in_memory_factory
+from edgeproc_core import GlobalPartitionStrategy, IndexManager
+from edgeproc_core.vector_mgmt.core.types import VectorEmbedding
+from edgeproc_core.vector_mgmt.testing import in_memory_factory
 
 async def demo() -> None:
     strategy = GlobalPartitionStrategy(index_factory=in_memory_factory)
@@ -104,13 +104,13 @@ FAISS-backed example.
 uv pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
 
 # Or from a GitHub Release wheel
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.2.0/shared_libs_python-0.2.0-py3-none-any.whl
+uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.2.0/edgeproc_core-0.2.0-py3-none-any.whl
 ```
 
 In your `pyproject.toml`:
 ```toml
 dependencies = [
-  "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0",
+  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0",
 ]
 ```
 
@@ -130,7 +130,7 @@ uv sync
 - **Why it exists.** Every multi-tenant vector-search system rediscovers the
   same partitioning patterns ("global + filter", "hash buckets", "hot/cold").
   This library does that once, cleanly typed, so downstream projects
-  (`edge-proc`, …) can `import shared_libs_python` instead of reinventing it.
+  (`edge-proc`, …) can `import edgeproc_core` instead of reinventing it.
 - **Quality bar.** `mypy --strict` clean, xenon Grade A complexity, ≥90% branch
   coverage. Backwards-compatible with the legacy `tenant_id` API.
 
@@ -144,7 +144,7 @@ search.
 ### Source tree
 
 ```
-shared_libs_python/
+edgeproc_core/
   vector_mgmt/
     core/
       types.py          # VectorEmbedding, IndexConfig, IndexStats, VectorIndex, IndexFactory
@@ -188,7 +188,7 @@ lives in [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
 
 ### Canonical errors
 
-The package ships a second, independent module: `shared_libs_python.errors`.
+The package ships a second, independent module: `edgeproc_core.errors`.
 It has nothing to do with vector search — it solves a different recurring
 problem, and it is roughly as much code as the partitioning layer.
 
@@ -206,7 +206,7 @@ like `net.unreachable` — and then always speak in codes:
   Problem Details JSON an API returns
 
 ```python
-from shared_libs_python.errors import define_errors, starter_pack
+from edgeproc_core.errors import define_errors, starter_pack
 
 registry = define_errors(starter_pack)          # 18 universal codes, or bring your own
 registry.classify({"status": 402})              # → 'ai.provider.out_of_credits'

@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING: renamed to `edgeproc-core` (import package `edgeproc_core`).**
+  The old name described this repository's *role* in a workspace, not a
+  product, and a published PyPI name is permanent — so the rename had to land
+  before the first publish. Update imports (`shared_libs_python` →
+  `edgeproc_core`) and the dependency spec (`shared-libs-python` →
+  `edgeproc-core`). The GitHub repository, its URLs, and the local directory
+  are deliberately unchanged; only the distribution and import names moved.
+  Released sections below keep the old name on purpose: they are history.
+
 ### Added
+- **A wrong distribution name can no longer degrade `__version__` silently.**
+  Both `__init__.py` files resolve `__version__` through
+  `importlib.metadata.version(...)` and swallow `PackageNotFoundError` into a
+  `0.0.0+unknown` fallback. A rename that missed a lookup string would still
+  import, still type-check, and still pass every other test — while reporting a
+  fake version. `tests/test_version.py` now asserts the resolved version is not
+  the fallback *and* that every lookup site names the distribution
+  `pyproject.toml` actually declares, so the two can never drift apart again.
 - **Distinguished-engineer operating contract and repeatable benchmark.**
   `docs/OPERATIONS.md` now makes the package's trust, privacy, recovery, and
   performance ownership explicit; `benchmarks/benchmark.py` records fixed

@@ -537,7 +537,7 @@ WHERE tenant_id = $1;  -- Then filter (inefficient)
 ### Consumer performance targets (guidance, not a library SLA)
 
 These targets describe a production backend an adopter may choose to operate;
-`shared-libs-python` does not ship that HNSW service or claim its latency. The
+`edgeproc-core` does not ship that HNSW service or claim its latency. The
 repeatable benchmark for library-owned routing and the in-memory reference lives
 in [`OPERATIONS.md`](OPERATIONS.md).
 
@@ -615,4 +615,4 @@ in [`OPERATIONS.md`](OPERATIONS.md).
 **Status**: Consumer architecture guidance; shipped code is the typed partitioning protocol
 
 **Library**: `~/dev/shared-libs-python`
-**Package**: `shared_libs_python.vector_mgmt`
+**Package**: `edgeproc_core.vector_mgmt`

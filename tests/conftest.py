@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from shared_libs_python.vector_mgmt.core.types import (
+from edgeproc_core.vector_mgmt.core.types import (
     IndexConfig,
     IndexStats,
     VectorEmbedding,

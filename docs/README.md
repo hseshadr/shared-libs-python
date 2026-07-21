@@ -1,4 +1,4 @@
-# shared-libs-python Documentation
+# edgeproc-core Documentation
 
 ## Documents
 

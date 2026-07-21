@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from shared_libs_python.vector_mgmt.core.types import IndexConfig, VectorEmbedding
-from shared_libs_python.vector_mgmt.testing import (
+from edgeproc_core.vector_mgmt.core.types import IndexConfig, VectorEmbedding
+from edgeproc_core.vector_mgmt.testing import (
     InMemoryVectorIndex,
     in_memory_factory,
 )

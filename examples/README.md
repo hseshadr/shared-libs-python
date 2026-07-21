@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains example usage patterns for shared-libs-python.
+This directory contains example usage patterns for edgeproc-core.
 
 ## Basic Usage
 

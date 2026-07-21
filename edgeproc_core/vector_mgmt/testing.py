@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 
-from shared_libs_python.vector_mgmt.core.types import (
+from edgeproc_core.vector_mgmt.core.types import (
     IndexConfig,
     IndexStats,
     Metadata,

@@ -10,9 +10,9 @@ from __future__ import annotations
 import re
 from typing import Final
 
-from shared_libs_python.errors.canonical_error import CanonicalError, DuplicateCodeError
-from shared_libs_python.errors.raw import http_status_of
-from shared_libs_python.errors.types import (
+from edgeproc_core.errors.canonical_error import CanonicalError, DuplicateCodeError
+from edgeproc_core.errors.raw import http_status_of
+from edgeproc_core.errors.types import (
     Catalog,
     CatalogEntry,
     Category,

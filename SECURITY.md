@@ -11,7 +11,7 @@ We provide security updates for the following versions:
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in shared-libs-python, please report it responsibly.
+If you discover a security vulnerability in edgeproc-core, please report it responsibly.
 
 ### How to Report
 
@@ -38,7 +38,7 @@ If you discover a security vulnerability in shared-libs-python, please report it
 
 ## Security Best Practices
 
-When using shared-libs-python:
+When using edgeproc-core:
 
 1. **Partition Key Security**: Ensure partition keys are validated and not user-controlled
 2. **Input Validation**: Validate all inputs before passing to library functions
@@ -80,5 +80,5 @@ documented in [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
 
 ## Thank You
 
-Thank you for helping keep shared-libs-python and its users safe!
+Thank you for helping keep edgeproc-core and its users safe!
 

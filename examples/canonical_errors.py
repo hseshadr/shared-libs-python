@@ -5,7 +5,7 @@ The problem: the same outage arrives in a dozen shapes. An HTTP 402, a thrown
 and every layer of an app ends up re-writing the same fragile `if` ladder to
 decide what to tell the user.
 
-`shared_libs_python.errors` does that once. You register a **catalog** of stable
+`edgeproc_core.errors` does that once. You register a **catalog** of stable
 codes (or reuse the bundled `starter_pack` of 18 universal ones), then:
 
 - `classify(raw)`  — any raw failure  -> a stable code such as `net.unreachable`
@@ -18,7 +18,7 @@ failure keeps the same identity on both sides of a stack.
 
 from __future__ import annotations
 
-from shared_libs_python.errors import define_errors, starter_pack
+from edgeproc_core.errors import define_errors, starter_pack
 
 
 def main() -> None:

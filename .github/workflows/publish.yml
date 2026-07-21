@@ -1,11 +1,11 @@
-# shared-libs-python — .github/workflows/publish.yml
+# edgeproc-core — .github/workflows/publish.yml
 # PyPI release via OIDC Trusted Publishing. A `v*` tag push is the whole trigger; there is
 # NO PyPI token in this repo. This REPLACES the previous token/build + GitHub-Release flow:
 # the reusable python-publish workflow re-runs `uv run poe gate` on the tagged ref and then
 # publishes via OIDC (short-lived token, PEP 740 attestations) — no stored API token.
 #
 # One-time bootstrap (deferred — needs a human): register the GitHub Actions trusted
-# publisher on PyPI as a PENDING publisher (shared-libs-python is not yet on PyPI). After
+# publisher on PyPI as a PENDING publisher (edgeproc-core is not yet on PyPI). After
 # the first OIDC publish creates the project, every `git tag vX.Y.Z && git push --tags`
 # releases automatically. The workflow filename + repo + owner ARE the credential.
 #

@@ -1,4 +1,4 @@
-"""The public type surface for ``shared_libs_python.errors``.
+"""The public type surface for ``edgeproc_core.errors``.
 
 A canonical error is ``{code, params, category}`` and serializes to the RFC 9457
 Problem Details shape on the wire. The :class:`CatalogEntry` for a code is the

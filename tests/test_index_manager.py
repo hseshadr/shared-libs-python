@@ -4,14 +4,14 @@ from datetime import datetime
 
 import pytest
 
-from shared_libs_python.vector_mgmt.core.index_manager import IndexManager
-from shared_libs_python.vector_mgmt.core.types import IndexConfig, VectorEmbedding
-from shared_libs_python.vector_mgmt.partitioning.strategies import (
+from edgeproc_core.vector_mgmt.core.index_manager import IndexManager
+from edgeproc_core.vector_mgmt.core.types import IndexConfig, VectorEmbedding
+from edgeproc_core.vector_mgmt.partitioning.strategies import (
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
     TwoTierPartitionStrategy,
 )
-from shared_libs_python.vector_mgmt.testing import in_memory_factory
+from edgeproc_core.vector_mgmt.testing import in_memory_factory
 
 
 class TestIndexManager:

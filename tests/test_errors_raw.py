@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from shared_libs_python.errors import error_name_of, error_text_of, http_status_of
+from edgeproc_core.errors import error_name_of, error_text_of, http_status_of
 
 
 class PrivacyViolationError(Exception):

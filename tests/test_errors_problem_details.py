@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from shared_libs_python.errors import (
+from edgeproc_core.errors import (
     CatalogEntry,
     Category,
     ProblemDetails,

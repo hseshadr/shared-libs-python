@@ -1,1 +1,1 @@
-"""Test suite for shared-libs-python."""
+"""Test suite for edgeproc-core."""

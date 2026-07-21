@@ -23,7 +23,7 @@ What actually happened.
 
 ## Environment
 - Python version: 
-- shared-libs-python version: 
+- edgeproc-core version: 
 - Operating System: 
 - Vector database/backend (if applicable): 
 

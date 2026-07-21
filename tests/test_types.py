@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from shared_libs_python.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
+from edgeproc_core.vector_mgmt.core.types import IndexConfig, IndexStats, VectorEmbedding
 
 
 class TestVectorEmbedding:

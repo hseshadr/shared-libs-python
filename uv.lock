@@ -659,7 +659,7 @@ wheels = [
 ]
 
 [[package]]
-name = "shared-libs-python"
+name = "edgeproc-core"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [

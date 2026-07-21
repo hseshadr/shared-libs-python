@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "shared-libs-python"
+name = "edgeproc-core"
 version = "0.2.0"
 description = "Vector partitioning and generic partition-key management for Python."
 readme = "README.md"
@@ -62,14 +62,14 @@ Repository = "https://github.com/hseshadr/shared-libs-python"
 Issues = "https://github.com/hseshadr/shared-libs-python/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["shared_libs_python"]
+packages = ["edgeproc_core"]
 
 [tool.hatch.build.targets.sdist]
 # Lean sdist: distribution sources only. The ~5 MB of rendered PNG diagrams under
 # docs/, the resolved uv.lock, and dev-only tooling (.github, .claude, CLAUDE.md)
 # live in the git repo — they have no place in the published tarball.
 only-include = [
-    "shared_libs_python",
+    "edgeproc_core",
     "tests",
     "examples",
     "benchmarks",
@@ -113,7 +113,7 @@ python_files = ["test_*.py"]
 asyncio_mode = "auto"
 addopts = [
     "--strict-markers",
-    "--cov=shared_libs_python",
+    "--cov=edgeproc_core",
     # Branch coverage, not merely statement coverage: the README publishes a
     # branch figure, so the gate must measure the thing the README claims.
     "--cov-branch",
@@ -124,7 +124,7 @@ addopts = [
 ]
 
 [tool.coverage.run]
-source = ["shared_libs_python"]
+source = ["edgeproc_core"]
 branch = true
 omit = ["*/tests/*", "*/__pycache__/*"]
 
@@ -141,11 +141,11 @@ exclude_lines = [
 fail_under = 90.0
 
 [tool.poe.tasks]
-lint = "ruff check shared_libs_python/ tests/"
-fmt = "ruff format shared_libs_python/ tests/"
-fmt-check = "ruff format --check shared_libs_python/ tests/"
-typecheck = "mypy --strict shared_libs_python/"
-complexity = "xenon --max-absolute A --max-modules A --max-average A shared_libs_python/"
+lint = "ruff check edgeproc_core/ tests/"
+fmt = "ruff format edgeproc_core/ tests/"
+fmt-check = "ruff format --check edgeproc_core/ tests/"
+typecheck = "mypy --strict edgeproc_core/"
+complexity = "xenon --max-absolute A --max-modules A --max-average A edgeproc_core/"
 test = "pytest"
 # The canonical quality gate (house standard §3). Mirrors CI exactly, both directions.
 gate = ["lint", "fmt-check", "typecheck", "complexity", "test"]

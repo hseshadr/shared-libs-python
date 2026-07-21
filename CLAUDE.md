@@ -68,7 +68,7 @@ This library provides vector partitioning (insert routing + top-k result merging
 ### Public API
 
 ```python
-from shared_libs_python import (
+from edgeproc_core import (
     IndexManager,
     PartitionStrategy, GlobalPartitionStrategy, BucketedPartitionStrategy, TwoTierPartitionStrategy,
     IndexConfig, IndexStats, VectorEmbedding, VectorIndex,
@@ -125,7 +125,7 @@ production code. The Python mirror of the TS `@edgeproc/errors` package, so a
 failure keeps one stable identity on both sides of the portfolio.
 
 ```python
-from shared_libs_python.errors import define_errors, starter_pack
+from edgeproc_core.errors import define_errors, starter_pack
 
 registry = define_errors(starter_pack)        # 18 universal codes; or declare your own
 registry.classify({"status": 402})            # raw failure -> 'ai.provider.out_of_credits'
@@ -160,7 +160,7 @@ FAISS-backed reference).
 
 ## Testing
 
-Tests use `InMemoryVectorIndex` from `shared_libs_python.vector_mgmt.testing` —
+Tests use `InMemoryVectorIndex` from `edgeproc_core.vector_mgmt.testing` —
 the same reference implementation the examples consume.
 
 The legacy `MockVectorIndex` in `tests/conftest.py` is retained only for the

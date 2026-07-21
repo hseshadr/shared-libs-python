@@ -8,7 +8,7 @@ universal codes so a site need not re-declare the common ones.
 
 Quickstart::
 
-    from shared_libs_python.errors import define_errors, starter_pack
+    from edgeproc_core.errors import define_errors, starter_pack
 
     registry = define_errors(starter_pack)
     registry.classify({"status": 402})            # 'ai.provider.out_of_credits'
@@ -18,11 +18,11 @@ Quickstart::
 
 from __future__ import annotations
 
-from shared_libs_python.errors.canonical_error import CanonicalError, DuplicateCodeError
-from shared_libs_python.errors.raw import error_name_of, error_text_of, http_status_of
-from shared_libs_python.errors.registry import Registry, define_errors
-from shared_libs_python.errors.starter_pack import starter_pack
-from shared_libs_python.errors.types import (
+from edgeproc_core.errors.canonical_error import CanonicalError, DuplicateCodeError
+from edgeproc_core.errors.raw import error_name_of, error_text_of, http_status_of
+from edgeproc_core.errors.registry import Registry, define_errors
+from edgeproc_core.errors.starter_pack import starter_pack
+from edgeproc_core.errors.types import (
     Catalog,
     CatalogEntry,
     Category,

@@ -8,12 +8,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from shared_libs_python.vector_mgmt.core.types import (
+from edgeproc_core.vector_mgmt.core.types import (
     IndexConfig,
     VectorEmbedding,
     VectorIndex,
 )
-from shared_libs_python.vector_mgmt.partitioning.strategies import (
+from edgeproc_core.vector_mgmt.partitioning.strategies import (
     _TIER_FACTORY_NAMES,
     BucketedPartitionStrategy,
     GlobalPartitionStrategy,
@@ -210,7 +210,7 @@ class TestBucketRoutingDeterminism:
     """
 
     _BUCKET_SCRIPT = (
-        "from shared_libs_python.vector_mgmt.partitioning.strategies import "
+        "from edgeproc_core.vector_mgmt.partitioning.strategies import "
         "BucketedPartitionStrategy\n"
         "strategy = BucketedPartitionStrategy(index_factory=None, num_buckets=1024)\n"
         "keys = [f'tenant_{i}' for i in range(32)] + ['\\u00fcn\\u00efcode-tenant']\n"

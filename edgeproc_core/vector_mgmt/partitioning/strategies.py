@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Final, Literal
 
-from shared_libs_python.vector_mgmt.core.types import (
+from edgeproc_core.vector_mgmt.core.types import (
     IndexConfig,
     IndexFactory,
     VectorEmbedding,

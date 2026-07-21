@@ -40,7 +40,7 @@ def test_readme_status_and_install_examples_match_package_version() -> None:
     readme = _read("README.md")
     assert f"**Status:** v{version}" in readme
     assert f"shared-libs-python.git@v{version}" in readme
-    assert f"/download/v{version}/shared_libs_python-{version}-" in readme
+    assert f"/download/v{version}/edgeproc_core-{version}-" in readme
 
 
 def test_installation_guide_has_no_stale_release_pins() -> None:

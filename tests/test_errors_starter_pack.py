@@ -8,7 +8,7 @@ classifies to the same code in a browser and in a Python backend.
 
 from __future__ import annotations
 
-from shared_libs_python.errors import CatalogEntry, Category, define_errors, starter_pack
+from edgeproc_core.errors import CatalogEntry, Category, define_errors, starter_pack
 
 # The canonical 18 — the single source of truth both languages transcribe.
 EXPECTED_CODES = frozenset(

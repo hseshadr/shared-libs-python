@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from shared_libs_python.errors import CatalogEntry, Category, define_errors, starter_pack
+from edgeproc_core.errors import CatalogEntry, Category, define_errors, starter_pack
 
 registry = define_errors(starter_pack)
 

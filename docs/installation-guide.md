@@ -1,6 +1,6 @@
 # Installation guide
 
-**TL;DR.** `shared-libs-python` supports Python 3.13+ and is distributed from
+**TL;DR.** `edgeproc-core` supports Python 3.13+ and is distributed from
 the public GitHub repository. Pin the latest released tag for applications:
 
 ```bash
@@ -43,7 +43,7 @@ python -m pip install git+https://github.com/hseshadr/shared-libs-python.git@v0.
 The GitHub Release also contains a wheel:
 
 ```bash
-uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.2.0/shared_libs_python-0.2.0-py3-none-any.whl
+uv pip install https://github.com/hseshadr/shared-libs-python/releases/download/v0.2.0/edgeproc_core-0.2.0-py3-none-any.whl
 ```
 
 For `pyproject.toml`:
@@ -52,24 +52,24 @@ For `pyproject.toml`:
 [project]
 requires-python = ">=3.13"
 dependencies = [
-  "shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0",
+  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0",
 ]
 ```
 
 For `requirements.txt`:
 
 ```text
-shared-libs-python @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
+edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@v0.2.0
 ```
 
 ## Verify the installation
 
 ```bash
 python - <<'PY'
-import shared_libs_python
-from shared_libs_python import BucketedPartitionStrategy, VectorEmbedding
+import edgeproc_core
+from edgeproc_core import BucketedPartitionStrategy, VectorEmbedding
 
-print(f"shared-libs-python {shared_libs_python.__version__}")
+print(f"edgeproc-core {edgeproc_core.__version__}")
 print(BucketedPartitionStrategy)
 print(VectorEmbedding(entity_id="example", embedding=[0.1, 0.2]))
 PY

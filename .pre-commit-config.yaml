@@ -30,6 +30,6 @@ repos:
         # dependency whose types matter here.
         additional_dependencies: [pydantic>=2.13.4]
         args: [--strict, --ignore-missing-imports]
-        files: ^shared_libs_python/
+        files: ^edgeproc_core/
 
 

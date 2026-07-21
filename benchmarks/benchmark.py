@@ -6,9 +6,9 @@ import asyncio
 from collections.abc import Callable
 from time import perf_counter
 
-from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
-from shared_libs_python.vector_mgmt.partitioning.strategies import BucketedPartitionStrategy
-from shared_libs_python.vector_mgmt.testing import InMemoryVectorIndex, in_memory_factory
+from edgeproc_core.vector_mgmt.core.types import VectorEmbedding
+from edgeproc_core.vector_mgmt.partitioning.strategies import BucketedPartitionStrategy
+from edgeproc_core.vector_mgmt.testing import InMemoryVectorIndex, in_memory_factory
 
 ENTITY_COUNT = 10_000
 DIMENSION = 32

@@ -1,6 +1,6 @@
-# Contributing to shared-libs-python
+# Contributing to edgeproc-core
 
-Thank you for your interest in contributing to shared-libs-python! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to edgeproc-core! This document provides guidelines and instructions for contributing.
 
 ## Development Setup
 
@@ -126,7 +126,7 @@ Then create a Pull Request on GitHub.
 uv run pytest
 
 # With coverage report
-uv run pytest --cov=shared_libs_python --cov-report=html
+uv run pytest --cov=edgeproc_core --cov-report=html
 
 # Specific test
 uv run pytest tests/test_index_manager.py::TestIndexManager::test_insert

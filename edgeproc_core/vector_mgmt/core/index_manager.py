@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import Final
 
-from shared_libs_python.vector_mgmt.core.types import (
+from edgeproc_core.vector_mgmt.core.types import (
     IndexConfig,
     IndexStats,
     Metadata,
     Scalar,
     VectorEmbedding,
 )
-from shared_libs_python.vector_mgmt.partitioning.strategies import PartitionStrategy
+from edgeproc_core.vector_mgmt.partitioning.strategies import PartitionStrategy
 
 TOMBSTONE_REBUILD_THRESHOLD_PCT: Final[float] = 10.0
 """Tombstone percentage above which a rebuild is triggered."""

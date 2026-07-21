@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import asyncio
 
-from shared_libs_python import BucketedPartitionStrategy, IndexManager
-from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
-from shared_libs_python.vector_mgmt.testing import in_memory_factory
+from edgeproc_core import BucketedPartitionStrategy, IndexManager
+from edgeproc_core.vector_mgmt.core.types import VectorEmbedding
+from edgeproc_core.vector_mgmt.testing import in_memory_factory
 
 
 async def main() -> None:

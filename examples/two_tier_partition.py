@@ -17,9 +17,9 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime, timedelta
 
-from shared_libs_python import IndexConfig, IndexManager, TwoTierPartitionStrategy
-from shared_libs_python.vector_mgmt.core.types import VectorEmbedding
-from shared_libs_python.vector_mgmt.testing import in_memory_factory
+from edgeproc_core import IndexConfig, IndexManager, TwoTierPartitionStrategy
+from edgeproc_core.vector_mgmt.core.types import VectorEmbedding
+from edgeproc_core.vector_mgmt.testing import in_memory_factory
 
 HOT_RETENTION_DAYS = 30
 

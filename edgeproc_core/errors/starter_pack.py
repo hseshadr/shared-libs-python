@@ -15,8 +15,8 @@ from __future__ import annotations
 import re
 from typing import Final
 
-from shared_libs_python.errors.raw import error_name_of, error_text_of, http_status_of
-from shared_libs_python.errors.types import Catalog, CatalogEntry, Category
+from edgeproc_core.errors.raw import error_name_of, error_text_of, http_status_of
+from edgeproc_core.errors.types import Catalog, CatalogEntry, Category
 
 _NETWORK_TEXT: Final[re.Pattern[str]] = re.compile(
     r"failed to fetch|load failed|networkerror|connection", re.IGNORECASE

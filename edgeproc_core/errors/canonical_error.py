@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from shared_libs_python.errors.types import Category, ErrorCode, Params
+from edgeproc_core.errors.types import Category, ErrorCode, Params
 
 
 class CanonicalError(Exception):
