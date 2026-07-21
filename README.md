@@ -32,7 +32,7 @@ edge-reco        the reference product: hybrid search + recommendations, in the 
 **Status:** v0.2.0, alpha. Small and focused by design — the foundation, not
 the headline.
 
-## Northstar status (verified 2026-07-16)
+## Status (verified 2026-07-16)
 
 The verified application commit is `c70999c`. It preserves empty-string partition keys instead
 of silently treating them as missing, while retaining compatibility with the legacy

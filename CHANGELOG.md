@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Distinguished-engineer operating contract and repeatable benchmark.**
   `docs/OPERATIONS.md` now makes the package's trust, privacy, recovery, and
-  performance ownership explicit; `benchmarks/northstar.py` records fixed
+  performance ownership explicit; `benchmarks/benchmark.py` records fixed
   p50/p95 budgets for 10,000-item routing and the in-memory reference search.
 - **`shared_libs_python.errors` — canonical errors module.** The Python mirror
   of the `@edgeproc/errors` TS package, so a failure carries the same stable
