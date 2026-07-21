@@ -24,8 +24,8 @@ backend must provide — Python's `typing.Protocol`, nothing to subclass),
 nothing more:
 
 ```
-edge-reco        the reference product: hybrid search + recommendations, in the browser
-  └─ edge-proc   the reusable local-compute substrate (FAISS-backed localvec runtime)
+edge-reco        hybrid search + recommendations, running in the browser
+  └─ edge-proc   ships big files to devices and proves they arrived unmodified
        └─ shared-libs-python   ← you are here: the vector-partitioning protocol
 ```
 
