@@ -56,3 +56,25 @@ def test_changelog_links_continue_from_the_current_release() -> None:
     repository = "https://github.com/hseshadr/shared-libs-python"
     assert f"[Unreleased]: {repository}/compare/v{version}...HEAD" in changelog
     assert f"[{version}]: {repository}/compare/v0.1.4...v{version}" in changelog
+
+
+def test_the_gate_measures_branch_coverage_not_just_statements() -> None:
+    """The README publishes a *branch* figure, so the gate must measure branches.
+
+    `--cov-branch` was once absent, which made the published "98.62% branch
+    coverage" really statement coverage. This pins the stricter measurement in
+    place so the claim and the gate cannot drift apart again.
+    """
+    pytest_config = tomllib.loads(_read("pyproject.toml"))["tool"]["pytest"]["ini_options"]
+
+    assert "--cov-branch" in pytest_config["addopts"]
+
+
+def test_published_coverage_floor_matches_the_configured_floor() -> None:
+    """The floor the docs promise is the floor the gate actually enforces."""
+    config = tomllib.loads(_read("pyproject.toml"))
+    configured = config["tool"]["coverage"]["report"]["fail_under"]
+    addopts = config["tool"]["pytest"]["ini_options"]["addopts"]
+
+    assert f"--cov-fail-under={configured:.0f}" in addopts
+    assert f"≥{configured:.0f}% branch coverage" in _read("README.md")

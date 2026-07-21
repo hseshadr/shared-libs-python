@@ -134,18 +134,41 @@ uv run pytest tests/test_index_manager.py::TestIndexManager::test_insert
 
 ## Pull Request Process
 
-1. **Update CHANGELOG.md** with your changes
+1. **Update CHANGELOG.md** under `[Unreleased]` — see the rule below
 2. **Ensure the gate passes** (`uv run poe gate` — lint, format check,
-   `mypy --strict`, xenon complexity, tests with ≥90% coverage)
+   `mypy --strict`, xenon complexity, tests with ≥90% branch coverage)
 3. **Update documentation** if needed
 4. **Request review** from maintainers
+
+### Released changelog sections are immutable
+
+New entries go under `[Unreleased]`, **never** into an already-released section.
+Once `vX.Y.Z` is tagged, that section is history: checking out the tag must
+reproduce exactly what `HEAD` says shipped in `X.Y.Z`. Editing a released
+section — even just re-dating its header — breaks that, and provable provenance
+is the whole point of this stack.
+
+`tests/test_changelog_provenance.py` enforces this by diffing every released
+section at `HEAD` against the same section at its tag. If it fails, move your
+entry to `[Unreleased]` rather than changing the released text.
+
+Adding a `[X.Y.Z]: …/compare/…` link-reference line to the footer is fine — that
+footer is a growing index of releases, not any one release's record.
+
+### Benchmark figures
+
+If you change a number published in `README.md` or `docs/OPERATIONS.md`,
+re-measure it (`uv run python benchmarks/benchmark.py`), state the hardware and
+date, and update `REFERENCE` in `tests/test_benchmark_claims.py` in the same
+commit. That test compares the docs against the recorded measurement — it never
+runs the benchmark itself, so it cannot flake on a busy machine.
 
 ### PR Checklist
 
 - [ ] Tests added/updated
 - [ ] The gate passes (`uv run poe gate`)
 - [ ] Documentation updated
-- [ ] CHANGELOG.md updated
+- [ ] CHANGELOG.md updated **under `[Unreleased]`**
 
 ## Adding New Features
 

@@ -30,14 +30,27 @@ edge-reco        hybrid search + recommendations, running in the browser
 ```
 
 **Status:** v0.2.0, alpha. Small and focused by design — the foundation, not
-the headline. The hosted CI run and the full local gate pass: 160 tests,
-98.62% branch coverage, strict mypy, lint, and formatting.
+the headline. The hosted CI run and the full local gate pass: 220 tests,
+98.41% branch coverage, strict mypy, lint, and formatting. That really is
+*branch* coverage — the gate runs `--cov-branch`, and the ≥90% branch coverage
+floor is enforced there, not just asserted here. (Statement coverage, the
+looser measure, is 98.62%.)
 
-On one developer laptop, the bundled benchmark (`benchmarks/benchmark.py`)
-reports partitioning 10,000 embeddings across 256 buckets at 5.6 ms p50 / 5.7 ms
-p95, and search against the bundled in-memory reference index at 18.5 ms p50 /
-18.7 ms p95 — see [`InMemoryVectorIndex`](#60-second-quickstart) below for what
-that reference index is (and isn't).
+The bundled benchmark (`benchmarks/benchmark.py`) reports
+**routing p50 5.8 ms / p95 6.0 ms** for 10,000 embeddings across 256 buckets,
+and **reference search p50 19.0 ms / p95 19.2 ms** against the bundled
+in-memory index — see [`InMemoryVectorIndex`](#60-second-quickstart) below for
+what that reference index is (and isn't).
+
+Measured 2026-07-20 on an Apple M3 Pro (macOS 26.5, arm64, CPython 3.13.5),
+20 samples per run, machine otherwise idle. Across six consecutive runs routing
+p50 spanned 5.7–6.1 ms and search p95 spanned 18.7–20.2 ms; a busy machine
+measures materially higher. These describe that tree on that laptop, not a
+promise for your hardware — reproduce with:
+
+```bash
+uv run python benchmarks/benchmark.py
+```
 
 ```bash
 uv sync
@@ -70,7 +83,7 @@ async def demo() -> None:
 asyncio.run(demo())  # → [('a', ~0.0)]  exact match, cosine distance ≈ 0
 ```
 
-Or run all three bundled examples end-to-end:
+Or run all five bundled examples end-to-end:
 
 ```bash
 git clone https://github.com/hseshadr/shared-libs-python.git
@@ -139,8 +152,14 @@ shared_libs_python/
     partitioning/
       strategies.py     # GlobalPartitionStrategy, BucketedPartitionStrategy, TwoTierPartitionStrategy
     testing.py          # InMemoryVectorIndex — reference impl for tests + examples
-examples/               # basic / custom-key / composite-key, plus run_loop.sh
-tests/                  # pytest suite (≥90% branch coverage)
+  errors/               # canonical error codes (see "Canonical errors" below)
+    types.py            # Category, CatalogEntry, ProblemDetails (RFC 9457)
+    registry.py         # Registry + define_errors — classify / describe / serialize
+    starter_pack.py     # 18 universal codes, ready to reuse
+    raw.py              # duck-typing helpers for failures of unknown shape
+    canonical_error.py  # CanonicalError, DuplicateCodeError
+examples/               # basic / custom-key / composite-key / two-tier / errors, plus run_loop.sh
+tests/                  # pytest suite (≥90% branch coverage enforced by the gate)
 ```
 
 ### Partitioning strategies
@@ -150,14 +169,57 @@ optional `partition_key_extractor` callable.
 
 | Strategy | When to use | How it routes |
 |----------|-------------|---------------|
-| `GlobalPartitionStrategy` | < 50K partition keys | One global index; filter by metadata at query time |
-| `BucketedPartitionStrategy` | 50K – 5M partition keys | Hash the partition key into one of N buckets (default 256) |
-| `TwoTierPartitionStrategy` | Time-keyed workloads | Split by `metadata["created_at"]` into a hot tier and a cold tier |
+| `GlobalPartitionStrategy` | < 50K partition keys | One global index; filter by metadata at query time — [example](examples/basic_usage.py) |
+| `BucketedPartitionStrategy` | 50K – 5M partition keys | Hash the partition key into one of N buckets (default 256) — [example](examples/custom_partition_key.py) |
+| `TwoTierPartitionStrategy` | Time-keyed workloads | Split by `metadata["created_at"]` into a hot tier and a cold tier — [example](examples/two_tier_partition.py) |
+
+Bucketing means collisions are expected by design: once partition keys outnumber
+buckets, two tenants share one physical index. Isolation does not depend on them
+landing in different buckets — a scoped read filters by partition key inside the
+index. [`tests/test_tenant_isolation.py`](tests/test_tenant_isolation.py) proves
+this by forcing the worst case (`num_buckets=1`, every key colliding) and
+asserting a tenant still sees only its own rows. Partition names are routing
+hints, never security principals: enforce isolation in your backing store too.
 
 The deep dive (rationale, scaling math, recommended `m` / `ef_construction`)
 lives in [`docs/vector-mgmt-architecture.md`](docs/vector-mgmt-architecture.md).
 The security, privacy, reliability, and measured-performance ownership contract
 lives in [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+
+### Canonical errors
+
+The package ships a second, independent module: `shared_libs_python.errors`.
+It has nothing to do with vector search — it solves a different recurring
+problem, and it is roughly as much code as the partitioning layer.
+
+**The problem.** The same failure arrives in a dozen shapes. An HTTP 402, a
+thrown `TimeoutError`, a browser's "Failed to fetch" — each is a different
+object, so every layer of an app re-writes the same brittle `if` ladder to
+decide what to show the user, and the answers drift apart.
+
+**What it does.** You register a *catalog* — a set of stable, namespaced codes
+like `net.unreachable` — and then always speak in codes:
+
+- `classify(raw)` turns any raw failure into a stable code
+- `describe(code)` renders human text, through your own i18n if you have one
+- `to_problem_details(code).to_dict()` produces the [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)
+  Problem Details JSON an API returns
+
+```python
+from shared_libs_python.errors import define_errors, starter_pack
+
+registry = define_errors(starter_pack)          # 18 universal codes, or bring your own
+registry.classify({"status": 402})              # → 'ai.provider.out_of_credits'
+registry.describe("net.unreachable")            # → "Couldn't reach the server. …"
+registry.to_problem_details("net.unreachable").to_dict()
+```
+
+`starter_pack` covers the common provider / config / network / timeout / device
+/ integrity / internal cases so you need not re-declare them; `define_errors`
+rejects a duplicate code at registration. The codes match the TypeScript
+`@edgeproc/errors` package, so a failure keeps one identity across a stack.
+
+Runnable demo: [`examples/canonical_errors.py`](examples/canonical_errors.py).
 
 ### Generic partition keys
 

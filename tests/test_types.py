@@ -184,3 +184,38 @@ class TestIndexStats:
         )
         assert stats.build_time_seconds == 120.5
         assert stats.last_rebuild_at == "2025-01-15T10:00:00Z"
+
+
+class TestIndexConfigBounds:
+    """Every tuning knob is a positive count; zero or negative is nonsense.
+
+    These are pass-through values handed to a backend (HNSW ``m``, ``ef_*``,
+    vector ``dimension``). Rejecting them at construction turns a confusing
+    downstream failure — or a silently degenerate index — into an immediate,
+    local error naming the field.
+    """
+
+    @pytest.mark.parametrize("field", ["m", "ef_construction", "ef_search", "dimension"])
+    @pytest.mark.parametrize("bad_value", [0, -1, -100])
+    def test_non_positive_values_are_rejected(self, field: str, bad_value: int) -> None:
+        """A zero or negative knob fails at construction, naming the field."""
+        with pytest.raises(ValidationError) as excinfo:
+            IndexConfig(**{field: bad_value})
+
+        assert field in str(excinfo.value)
+
+    @pytest.mark.parametrize("field", ["m", "ef_construction", "ef_search", "dimension"])
+    def test_positive_values_are_accepted(self, field: str) -> None:
+        """The bound rejects only non-positive values — 1 remains valid."""
+        assert getattr(IndexConfig(**{field: 1}), field) == 1
+
+    def test_defaults_still_satisfy_the_bounds(self) -> None:
+        """The shipped defaults must not be excluded by the constraint."""
+        config = IndexConfig()
+
+        assert (config.m, config.ef_construction, config.ef_search, config.dimension) == (
+            32,
+            200,
+            100,
+            1536,
+        )

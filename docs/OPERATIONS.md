@@ -61,8 +61,12 @@ developer and CI machines and must be measured before a release:
 | Route 10,000 eight-dimensional embeddings into 256 buckets | p50 <= 100 ms; p95 <= 200 ms |
 | In-memory reference exact top-10 over 10,000 x 32 floats | p50 <= 500 ms; p95 <= 750 ms |
 
-Local release measurement on 2026-07-15 (macOS arm64, Python 3.13.5): routing
-**p50 5.8 ms / p95 6.0 ms**; reference search **p50 18.6 ms / p95 19.1 ms**.
+Local release measurement on 2026-07-20 (Apple M3 Pro, macOS 26.5 arm64, CPython
+3.13.5, 20 samples per run, machine otherwise idle):
+**routing p50 5.8 ms / p95 6.0 ms**; **reference search p50 19.0 ms / p95 19.2 ms**.
+Across six consecutive runs routing p50 spanned 5.7–6.1 ms and search p95 spanned
+18.7–20.2 ms, so read any single figure as a representative sample, not a floor —
+a loaded machine measures materially higher.
 Treat the checked-in budgets—not one developer machine's faster result—as the contract.
 
 Run the repeatable 20-sample benchmark:

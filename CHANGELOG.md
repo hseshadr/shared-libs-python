@@ -7,13 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0] — 2026-07-20
-
 ### Added
 - **Distinguished-engineer operating contract and repeatable benchmark.**
   `docs/OPERATIONS.md` now makes the package's trust, privacy, recovery, and
   performance ownership explicit; `benchmarks/benchmark.py` records fixed
   p50/p95 budgets for 10,000-item routing and the in-memory reference search.
+- **Tenant isolation is proven under forced bucket collision.** The README's
+  central promise — "nobody ever sees anyone else's results" — was only tested
+  end-to-end for `GlobalPartitionStrategy`, never for the case bucketing
+  creates by design once tenants outnumber buckets. `tests/test_tenant_isolation.py`
+  forces the worst case (`num_buckets=1`, so every key collides into one index)
+  and asserts a scoped read still returns only its own rows, for the default
+  `tenant_id` key and a custom one. Each isolation test is paired with a
+  non-vacuity assertion that the collision really happened. Isolation holds.
+- **Released changelog sections are immutable, and a test enforces it.**
+  `tests/test_changelog_provenance.py` compares every released (non-`Unreleased`)
+  section at `HEAD` against the same section at its own tag and fails on any
+  edit, so checking out `vX.Y.Z` always reproduces what `HEAD` calls `X.Y.Z`.
+- **Runnable examples for the two-tier strategy and the errors module.**
+  `examples/two_tier_partition.py` (hot/cold routing plus a maintenance
+  `rebuild_if_needed` pass) and `examples/canonical_errors.py` (`Registry.codes`,
+  `Registry.classify`, `ProblemDetails.to_dict`). Both are wired into
+  `examples/run_loop.sh` and executed by the gate, so a documented capability
+  can no longer be shipped without a path a reader can actually run.
+- **Index-config bounds.** `IndexConfig.m`, `ef_construction`, `ef_search`, and
+  `dimension` are `Field(gt=0)`, so a nonsensical value is rejected at
+  construction instead of reaching a backend.
+
+### Changed
+- **Public status now matches the released `0.2.0` package.** README install
+  examples and `SECURITY.md` supported-version policy no longer point at the
+  stale `0.1.4`/`0.1.x` line; production-backend targets are labeled as
+  consumer guidance rather than library SLA claims.
+- **Workflow actions are immutable.** CI, security audit, artifact handoff,
+  Codecov, gitleaks, and GitHub release actions are pinned to full commit SHAs,
+  with a regression test that rejects moving tags.
+- **The gate now measures branch coverage.** `--cov-branch` was never passed, so
+  the "98.62% branch coverage" the README published was really *statement*
+  coverage. The gate measures branches now and the README publishes the real
+  branch figure — **98.41%**, still clear of the 90% floor. The floor was not
+  lowered to accommodate the stricter measurement.
+- **Benchmark figures re-measured, dated, and attributed to hardware.** The
+  published numbers were a best-of-many point estimate that a fresh run did not
+  reproduce. README and `docs/OPERATIONS.md` now carry a representative run with
+  the observed spread, the machine, the date, and the repro command, guarded by
+  `tests/test_benchmark_claims.py`.
+- **The errors module is documented.** `errors/` is 44% of production code but
+  the word "error" appeared nowhere in `README.md`. It now has a section with a
+  plain-language explanation and a runnable example.
+
+### Fixed
+- **Invalid bucket counts now fail at construction.**
+  `BucketedPartitionStrategy` rejects zero and negative `num_buckets` values at
+  the public boundary instead of failing later during routing with a modulo
+  error or producing invalid negative bucket identifiers.
+- **Workflow security test no longer passes vacuously.** It globbed `*.yml`
+  only, so a `deploy.yaml` with an unpinned action would never be inspected. It
+  now covers `*.yaml` too and asserts a non-zero count of examined references.
+- **Dead `types-all` pre-commit pin replaced.** The package has been a no-op
+  stub for years; the mypy hook now pulls `pydantic` (the only dependency with
+  types that matter here), and the hook revisions track the pinned tool
+  versions so pre-commit and the gate agree.
+
+## [0.2.0] — 2026-07-14
+
+### Added
 - **`shared_libs_python.errors` — canonical errors module.** The Python mirror
   of the `@edgeproc/errors` TS package, so a failure carries the same stable
   code and RFC 9457 shape on both sides of the portfolio. An app registers its
@@ -29,21 +87,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Params`/`ParamValue`/`TFunction`, `CanonicalError`, and the raw helpers
   `http_status_of`/`error_name_of`/`error_text_of`. Additive — no change to any
   existing module; this is the minor-version feature behind a 0.2.0 tag.
-
-### Changed
-- **Public status now matches the released `0.2.0` package.** README install
-  examples and `SECURITY.md` supported-version policy no longer point at the
-  stale `0.1.4`/`0.1.x` line; production-backend targets are labeled as
-  consumer guidance rather than library SLA claims.
-- **Workflow actions are immutable.** CI, security audit, artifact handoff,
-  Codecov, gitleaks, and GitHub release actions are pinned to full commit SHAs,
-  with a regression test that rejects moving tags.
-
-### Fixed
-- **Invalid bucket counts now fail at construction.**
-  `BucketedPartitionStrategy` rejects zero and negative `num_buckets` values at
-  the public boundary instead of failing later during routing with a modulo
-  error or producing invalid negative bucket identifiers.
 
 ## [0.1.4] — 2026-07-13
 

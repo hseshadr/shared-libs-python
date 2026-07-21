@@ -112,6 +112,34 @@ All inherit from `PartitionStrategy` ABC with `partition_key_name` and `partitio
 | BucketedPartitionStrategy | 50K-5M keys | Hash routing to N buckets (default 256) |
 | TwoTierPartitionStrategy | Time-based | Hot/cold split on `created_at` metadata |
 
+Bucket collisions are expected by design (keys outnumber buckets). Isolation
+comes from the partition-key filter applied inside the index, not from disjoint
+buckets — `tests/test_tenant_isolation.py` forces `num_buckets=1` and proves a
+scoped read still returns only its own rows. Never treat a partition name as a
+security principal.
+
+### Canonical Errors (`errors/`)
+
+A second, independent module — unrelated to vector search, and roughly 44% of
+production code. The Python mirror of the TS `@edgeproc/errors` package, so a
+failure keeps one stable identity on both sides of the portfolio.
+
+```python
+from shared_libs_python.errors import define_errors, starter_pack
+
+registry = define_errors(starter_pack)        # 18 universal codes; or declare your own
+registry.classify({"status": 402})            # raw failure -> 'ai.provider.out_of_credits'
+registry.describe(code, params, t)            # code -> human text, via your i18n
+registry.to_problem_details(code).to_dict()   # -> RFC 9457 wire object
+```
+
+- `types.py` — `Category`, `CatalogEntry`, `ProblemDetails`, type aliases.
+- `registry.py` — `Registry` + `define_errors`; duplicate codes rejected at registration.
+- `starter_pack.py` — the 18 universal provider/config/network/timeout/device/integrity/internal codes.
+- `raw.py` — duck-typing helpers (`http_status_of`, `error_name_of`, `error_text_of`) for custom `match` rules.
+
+Runnable demo: `examples/canonical_errors.py`.
+
 ### Key Design Pattern: Index Factory
 
 ```python

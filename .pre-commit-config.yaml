@@ -11,18 +11,24 @@ repos:
       - id: check-merge-conflict
       - id: debug-statements
 
+  # Revisions track the versions pinned in pyproject.toml, so a pre-commit run
+  # and `uv run poe gate` cannot disagree about what passes.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.15.21
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.0
+    rev: v2.3.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-all]
+        # `types-all` was a meta-package that has been an empty no-op stub for
+        # years — it installed no stubs, so this hook was type-checking against
+        # nothing extra. pydantic ships its own types and is the only
+        # dependency whose types matter here.
+        additional_dependencies: [pydantic>=2.13.4]
         args: [--strict, --ignore-missing-imports]
         files: ^shared_libs_python/
 

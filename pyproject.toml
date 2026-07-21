@@ -114,6 +114,9 @@ asyncio_mode = "auto"
 addopts = [
     "--strict-markers",
     "--cov=shared_libs_python",
+    # Branch coverage, not merely statement coverage: the README publishes a
+    # branch figure, so the gate must measure the thing the README claims.
+    "--cov-branch",
     "--cov-report=term-missing",
     "--cov-report=xml",
     "--cov-fail-under=90",
@@ -122,6 +125,7 @@ addopts = [
 
 [tool.coverage.run]
 source = ["shared_libs_python"]
+branch = true
 omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]

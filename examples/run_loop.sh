@@ -24,4 +24,10 @@ banner "custom_partition_key — bucketed by user_id"
 banner "composite_partition_key — extractor builds org_id:region"
 "${PYTHON[@]}" "$HERE/composite_partition_key.py"
 
+banner "two_tier_partition — hot/cold split by created_at, plus a rebuild"
+"${PYTHON[@]}" "$HERE/two_tier_partition.py"
+
+banner "canonical_errors — raw failures become stable codes + RFC 9457"
+"${PYTHON[@]}" "$HERE/canonical_errors.py"
+
 printf "\nAll examples ran successfully.\n"

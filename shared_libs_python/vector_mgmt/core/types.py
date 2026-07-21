@@ -54,12 +54,16 @@ class IndexConfig(BaseModel):
     reference index, not an HNSW implementation of its own. A backend that
     implements ``VectorIndex`` (FAISS, pgvector, hnswlib, …) is free to honour
     or ignore them.
+
+    Every knob is a positive count: zero or negative is meaningless for all of
+    them, so the bound is enforced here rather than surfacing as a confusing
+    backend error (or a silently degenerate index) much later.
     """
 
-    m: int = 32
-    ef_construction: int = 200
-    ef_search: int = 100
-    dimension: int = 1536
+    m: int = Field(default=32, gt=0)
+    ef_construction: int = Field(default=200, gt=0)
+    ef_search: int = Field(default=100, gt=0)
+    dimension: int = Field(default=1536, gt=0)
     distance_metric: DistanceMetric = "cosine"
 
 
