@@ -45,7 +45,7 @@ def _partition_samples(embeddings: list[VectorEmbedding]) -> list[float]:
 
 
 async def _search_samples(embeddings: list[VectorEmbedding]) -> list[float]:
-    index = InMemoryVectorIndex("northstar")
+    index = InMemoryVectorIndex("benchmark")
     await index.insert(embeddings)
     query = embeddings[0].embedding
     await index.search(query, 10)

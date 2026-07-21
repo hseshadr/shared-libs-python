@@ -68,7 +68,7 @@ Treat the checked-in budgets—not one developer machine's faster result—as th
 Run the repeatable 20-sample benchmark:
 
 ```bash
-uv run python benchmarks/northstar.py
+uv run python benchmarks/benchmark.py
 ```
 
 The second row is an examples/testing guard, not a production promise. Backend query
