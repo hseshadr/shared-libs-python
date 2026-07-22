@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-07-21
+
+First release published to PyPI as
+[`edgeproc-core`](https://pypi.org/project/edgeproc-core/), so the short
+`pip install edgeproc-core` form now works. Install docs switch to PyPI-first;
+the pinned-commit git install remains documented as the from-source path.
+
 ### Changed
 - **BREAKING: renamed to `edgeproc-core` (import package `edgeproc_core`).**
   The old name described this repository's *role* in a workspace, not a
@@ -256,7 +263,8 @@ shared-libs-python` stack going public together; live demo at https://edge-reco.
 - Full type hints and mypy strict compliance
 - Protocol-based design for extensibility
 
-[Unreleased]: https://github.com/hseshadr/shared-libs-python/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/hseshadr/shared-libs-python/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/hseshadr/shared-libs-python/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/hseshadr/shared-libs-python/compare/v0.1.2...v0.1.3
