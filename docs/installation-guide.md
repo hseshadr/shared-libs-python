@@ -1,10 +1,10 @@
 # Installation guide
 
-**TL;DR.** `edgeproc-core` supports Python 3.13+ and is distributed from
-the public GitHub repository. Pin the commit below:
+**TL;DR.** `edgeproc-core` supports Python 3.13+ and is published on
+[PyPI](https://pypi.org/project/edgeproc-core/):
 
 ```bash
-uv pip install "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472"
+uv pip install edgeproc-core
 ```
 
 That installs the real library. To see its complete partition-and-search path
@@ -29,8 +29,37 @@ source .venv/bin/activate
 
 ## Install a pinned version
 
-Pin a full commit SHA so a later commit cannot silently change an application's
+Pin an exact release so a later publish cannot silently change an application's
 dependency:
+
+```bash
+# uv
+uv pip install "edgeproc-core==0.2.1"
+
+# pip
+python -m pip install "edgeproc-core==0.2.1"
+```
+
+For `pyproject.toml`:
+
+```toml
+[project]
+requires-python = ">=3.13"
+dependencies = [
+  "edgeproc-core>=0.2.1",
+]
+```
+
+For `requirements.txt`:
+
+```text
+edgeproc-core==0.2.1
+```
+
+### Installing from source instead
+
+To build from the repository rather than PyPI, pin a full commit SHA — Git
+cannot repoint it, so it is exactly as immutable as a release:
 
 ```bash
 # uv
@@ -40,33 +69,13 @@ uv pip install "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-pyth
 python -m pip install "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472"
 ```
 
-For `pyproject.toml`:
+### Why do source pins use a commit and not a tag?
 
-```toml
-[project]
-requires-python = ">=3.13"
-dependencies = [
-  "edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472",
-]
-```
-
-For `requirements.txt`:
-
-```text
-edgeproc-core @ git+https://github.com/hseshadr/shared-libs-python.git@6cdf8475b223262821622a021c561aed9213a472
-```
-
-### Why a commit and not a tag or a PyPI release?
-
-`edgeproc-core` is not on PyPI yet, and the newest tag — `v0.2.0` — was cut
-*before* the import package was renamed from `shared_libs_python` to
-`edgeproc_core`. Installing that tag therefore succeeds but gives you the old
-module name, and the verification snippet below would fail with
-`ModuleNotFoundError: No module named 'edgeproc_core'`.
-
-A full commit SHA is exactly as immutable as a tag — Git cannot repoint it — so
-pinning one gives up nothing but brevity. The planned `0.3.0` release will
-publish to PyPI and restore the short `pip install edgeproc-core` form.
+Tags `v0.2.0` and older were cut *before* the import package was renamed from
+`shared_libs_python` to `edgeproc_core`. Installing one of those tags therefore
+succeeds but gives you the old module name, and the verification snippet below
+fails with `ModuleNotFoundError: No module named 'edgeproc_core'`. Pin a commit
+at or after the rename, or install `v0.2.1`+ from PyPI as shown above.
 
 ## Verify the installation
 
@@ -108,8 +117,14 @@ uv pip install git+https://github.com/hseshadr/shared-libs-python.git@main
 
 ## Upgrade or reinstall
 
-Change the pinned commit, then resynchronize the environment. For the currently
-documented pin:
+For a PyPI install:
+
+```bash
+uv pip install --upgrade edgeproc-core
+```
+
+For a from-source install, change the pinned commit, then force the reinstall.
+For the currently documented pin:
 
 ```bash
 uv pip install --upgrade --force-reinstall \
@@ -140,9 +155,10 @@ git ls-remote https://github.com/hseshadr/shared-libs-python.git | \
 
 ### `ModuleNotFoundError: No module named 'edgeproc_core'`
 
-You almost certainly installed the `v0.2.0` tag rather than the pinned commit.
-That tag predates the rename and ships the old `shared_libs_python` module.
-Check what is actually installed and reinstall from the commit:
+You almost certainly installed the `v0.2.0` tag (or older) rather than a PyPI
+release or the pinned commit. Those tags predate the rename and ship the old
+`shared_libs_python` module. Check what is actually installed and reinstall
+from PyPI or the pinned commit:
 
 ```bash
 uv pip list | grep -i -E "edgeproc|shared"

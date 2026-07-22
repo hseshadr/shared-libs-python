@@ -187,7 +187,7 @@ def test_changelog_links_continue_from_the_current_release() -> None:
     changelog = _read("CHANGELOG.md")
     repository = f"https://github.com/hseshadr/{REPO_SLUG}"
     assert f"[Unreleased]: {repository}/compare/v{version}...HEAD" in changelog
-    assert f"[{version}]: {repository}/compare/v0.1.4...v{version}" in changelog
+    assert f"[{version}]: {repository}/compare/v0.2.0...v{version}" in changelog
 
 
 def test_the_gate_measures_branch_coverage_not_just_statements() -> None:
